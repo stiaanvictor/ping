@@ -3,14 +3,16 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import LoginScreen from "./screens/LoginScreen";
-import DashboardScreen from "./screens/DashboardScreen";
 import * as Font from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
+import DashboardScreen from "./screens/DashboardScreen";
+import ViewEventScreen from "./screens/ViewEventScreen";
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const { user } = useContext(AuthContext);
+  const [userType, setUserType] = useState("student");
 
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
@@ -30,22 +32,25 @@ const AppNavigator = () => {
   if (!fontsLoaded) return null;
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <NavigationContainer>
       {!user.isLoggedIn ? (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+        </Stack.Navigator>
       ) : (
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <Stack.Screen name="ViewEvent" component={ViewEventScreen} />
+        </Stack.Navigator>
       )}
-    </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
+      <AppNavigator />
     </AuthProvider>
   );
 }

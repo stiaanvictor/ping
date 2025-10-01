@@ -11,7 +11,7 @@ import {
 import { AuthContext } from "../context/AuthContext";
 import Colors from "../constants/colors";
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

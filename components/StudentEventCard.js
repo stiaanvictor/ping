@@ -1,7 +1,10 @@
-import { Image, StyleSheet, View, Text } from "react-native";
+import { Image, StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import Colors from "../constants/colors";
 
 function StudentEventCard({ id, type, title, description, date }) {
+  const navigation = useNavigation();
+
   const images = {
     sports: require("../assets/images/sports.png"),
     academics: require("../assets/images/academics.png"),
@@ -9,19 +12,25 @@ function StudentEventCard({ id, type, title, description, date }) {
     clubs: require("../assets/images/clubs.png"),
   };
 
+  const handlePress = () => {
+    navigation.navigate("ViewEvent", { id, type, title, description, date });
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.left}>
-        <Image source={images[type]} style={styles.image} />
+    <TouchableOpacity onPress={handlePress}>
+      <View style={styles.container}>
+        <View style={styles.left}>
+          <Image source={images[type]} style={styles.image} />
+        </View>
+        <View style={styles.middle}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+        </View>
+        <View style={styles.right}>
+          <Text style={styles.date}>{date}</Text>
+        </View>
       </View>
-      <View style={styles.middle}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-      </View>
-      <View style={styles.right}>
-        <Text style={styles.date}>{date}</Text>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
