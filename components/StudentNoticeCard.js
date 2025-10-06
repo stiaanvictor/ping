@@ -2,7 +2,15 @@ import { Image, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../constants/colors";
 
-function StudentEventCard({ id, type, title, description, date }) {
+function StudentNoticeCard({
+  id,
+  type,
+  title,
+  description,
+  eventDate,
+  noticeDate,
+  notice,
+}) {
   const navigation = useNavigation();
 
   const images = {
@@ -13,7 +21,15 @@ function StudentEventCard({ id, type, title, description, date }) {
   };
 
   const handlePress = () => {
-    navigation.navigate("ViewEvent", { id, type, title, description, date });
+    navigation.navigate("ViewNotice", {
+      id,
+      type,
+      title,
+      description,
+      eventDate,
+      noticeDate,
+      notice,
+    });
   };
 
   return (
@@ -27,14 +43,14 @@ function StudentEventCard({ id, type, title, description, date }) {
           <Text style={styles.description}>{description}</Text>
         </View>
         <View style={styles.right}>
-          <Text style={styles.date}>{date}</Text>
+          <Text style={styles.date}>{eventDate}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-export default StudentEventCard;
+export default StudentNoticeCard;
 
 const styles = StyleSheet.create({
   container: {

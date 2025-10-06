@@ -12,7 +12,7 @@ import { AuthContext } from "../context/AuthContext";
 import Colors from "../constants/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryCard from "../components/CategoryCard";
-import UpcomingEventsSection from "../components/UpcomingEventsSection";
+import StudentNoticesSection from "../components/StudentNoticesSection";
 import NavigationBar from "../components/NavigationBar";
 
 const StudentDashboardScreen = () => {
@@ -62,11 +62,11 @@ const StudentDashboardScreen = () => {
         {/* 4 Categories End */}
 
         {/* Upcoming events Start */}
-        <Text style={styles.upcomingEventsTitle}>Your Upcoming Events:</Text>
-        <UpcomingEventsSection />
+        <Text style={styles.upcomingEventsTitle}>Newest Notices:</Text>
+        <StudentNoticesSection />
         {/* Upcoming events End */}
       </ScrollView>
-      <NavigationBar selectedScreen="dashboard" />
+      <NavigationBar />
     </SafeAreaView>
   );
 };

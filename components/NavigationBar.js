@@ -1,12 +1,39 @@
 import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useNavigationState } from "@react-navigation/native";
 
-function NavigationBar({ selectedScreen }) {
+function NavigationBar() {
+  const navigation = useNavigation();
+
+  const routes = useNavigationState((state) => state.routes);
+  const index = useNavigationState((state) => state.index);
+
+  const currentRoute = routes[index].name;
+
+  const navigateDashboard = () => {
+    if (currentRoute !== "Dashboard") {
+      navigation.replace("Dashboard");
+    } else {
+      console.log("Ek sallie");
+    }
+  };
+
+  const navigateCalendar = () => {
+    if (currentRoute !== "Calendar") {
+      navigation.replace("Calendar");
+    } else {
+      console.log("Ek sallie");
+    }
+  };
+
+  const navigateGroups = () => {};
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.option}>
+      <TouchableOpacity style={styles.option} onPress={navigateDashboard}>
         <Image
           source={
-            selectedScreen === "dashboard"
+            currentRoute === "Dashboard"
               ? require("../assets/images/home-selected.png")
               : require("../assets/images/home.png")
           }
@@ -14,16 +41,16 @@ function NavigationBar({ selectedScreen }) {
         />
         <Text
           style={
-            selectedScreen === "dashboard" ? styles.textSelected : styles.text
+            currentRoute === "Dashboard" ? styles.textSelected : styles.text
           }
         >
           Dashboard
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.option}>
+      <TouchableOpacity style={styles.option} onPress={navigateCalendar}>
         <Image
           source={
-            selectedScreen === "calendar"
+            currentRoute === "Calendar"
               ? require("../assets/images/calendar-selected.png")
               : require("../assets/images/calendar.png")
           }
@@ -31,25 +58,23 @@ function NavigationBar({ selectedScreen }) {
         />
         <Text
           style={
-            selectedScreen === "calendar" ? styles.textSelected : styles.text
+            currentRoute === "Calendar" ? styles.textSelected : styles.text
           }
         >
           Calendar
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.option}>
+      <TouchableOpacity style={styles.option} onPress={navigateGroups}>
         <Image
           source={
-            selectedScreen === "groups"
+            currentRoute === "Groups"
               ? require("../assets/images/menu-selected.png")
               : require("../assets/images/menu.png")
           }
           style={styles.icon}
         />
         <Text
-          style={
-            selectedScreen === "groups" ? styles.textSelected : styles.text
-          }
+          style={currentRoute === "Groups" ? styles.textSelected : styles.text}
         >
           Groups
         </Text>

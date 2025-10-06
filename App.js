@@ -6,7 +6,8 @@ import LoginScreen from "./screens/LoginScreen";
 import * as Font from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
 import DashboardScreen from "./screens/DashboardScreen";
-import ViewEventScreen from "./screens/ViewEventScreen";
+import ViewNoticeScreen from "./screens/ViewNoticeScreen";
+import CaledarScreen from "./screens/CalendarScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -17,9 +18,8 @@ const AppNavigator = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
+    NavigationBar.setVisibilityAsync("hidden");
     async function loadFonts() {
-      NavigationBar.setVisibilityAsync("hidden");
-
       await Font.loadAsync({
         "Inter-Regular": require("./assets/fonts/Inter-VariableFont_opsz,wght.ttf"),
         "Inter-Italic": require("./assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf"),
@@ -40,7 +40,8 @@ const AppNavigator = () => {
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          <Stack.Screen name="ViewEvent" component={ViewEventScreen} />
+          <Stack.Screen name="ViewNotice" component={ViewNoticeScreen} />
+          <Stack.Screen name="Calendar" component={CaledarScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>
