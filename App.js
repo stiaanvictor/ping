@@ -8,6 +8,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import DashboardScreen from "./screens/DashboardScreen";
 import ViewNoticeScreen from "./screens/ViewNoticeScreen";
 import CaledarScreen from "./screens/CalendarScreen";
+import GroupSelectionScreen from "./screens/GroupSelectionScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +43,10 @@ const AppNavigator = () => {
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
           <Stack.Screen name="ViewNotice" component={ViewNoticeScreen} />
           <Stack.Screen name="Calendar" component={CaledarScreen} />
+          <Stack.Screen
+            name="GroupSelection"
+            component={GroupSelectionScreen}
+          />
         </Stack.Navigator>
       )}
     </NavigationContainer>
@@ -55,5 +60,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-
-//oppa

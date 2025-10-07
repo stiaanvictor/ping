@@ -14,7 +14,7 @@ function NavigationBar() {
     if (currentRoute !== "Dashboard") {
       navigation.replace("Dashboard");
     } else {
-      console.log("Ek sallie");
+      console.log("Error navigating");
     }
   };
 
@@ -22,11 +22,17 @@ function NavigationBar() {
     if (currentRoute !== "Calendar") {
       navigation.replace("Calendar");
     } else {
-      console.log("Ek sallie");
+      console.log("Error navigating");
     }
   };
 
-  const navigateGroups = () => {};
+  const navigateGroups = () => {
+    if (currentRoute !== "GroupSelection") {
+      navigation.replace("GroupSelection");
+    } else {
+      console.log("Error navigating");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -67,14 +73,18 @@ function NavigationBar() {
       <TouchableOpacity style={styles.option} onPress={navigateGroups}>
         <Image
           source={
-            currentRoute === "Groups"
+            currentRoute === "GroupSelection"
               ? require("../assets/images/menu-selected.png")
               : require("../assets/images/menu.png")
           }
           style={styles.icon}
         />
         <Text
-          style={currentRoute === "Groups" ? styles.textSelected : styles.text}
+          style={
+            currentRoute === "GroupSelection"
+              ? styles.textSelected
+              : styles.text
+          }
         >
           Groups
         </Text>
