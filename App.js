@@ -9,12 +9,13 @@ import DashboardScreen from "./screens/DashboardScreen";
 import ViewNoticeScreen from "./screens/ViewNoticeScreen";
 import CaledarScreen from "./screens/CalendarScreen";
 import GroupSelectionScreen from "./screens/GroupSelectionScreen";
+import EditNoticeScreen from "./screens/EditNoticeScreen";
+import TeacherGroupsScreen from "./screens/TeacherGroupsScreen";
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const { user } = useContext(AuthContext);
-  const [userType, setUserType] = useState("student");
 
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
@@ -42,11 +43,13 @@ const AppNavigator = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
           <Stack.Screen name="ViewNotice" component={ViewNoticeScreen} />
+          <Stack.Screen name="EditNotice" component={EditNoticeScreen} />
           <Stack.Screen name="Calendar" component={CaledarScreen} />
           <Stack.Screen
             name="GroupSelection"
             component={GroupSelectionScreen}
           />
+          <Stack.Screen name="TeacherGroups" component={TeacherGroupsScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

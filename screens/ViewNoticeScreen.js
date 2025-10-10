@@ -8,7 +8,7 @@ const notices = [
     id: 1,
     type: "sports",
     title: "Rugby",
-    description: "vs DF Malan",
+    subHeading: "vs DF Malan",
     eventDate: "2025-10-05",
     noticeDate: "2025-10-03",
     notice: "Match may be moved indoors due to possible rain.",
@@ -17,7 +17,7 @@ const notices = [
     id: 2,
     type: "academics",
     title: "Math Quiz",
-    description: "Chapter 5 & 6",
+    subHeading: "Chapter 5 & 6",
     eventDate: "2025-10-07",
     noticeDate: "2025-10-02",
     notice: "Reminder: Bring calculators for the quiz.",
@@ -26,7 +26,7 @@ const notices = [
     id: 3,
     type: "entertainment",
     title: "Movie Night",
-    description: "Avengers: Endgame",
+    subHeading: "Avengers: Endgame",
     eventDate: "2025-10-08",
     noticeDate: "2025-10-05",
     notice: "Snacks will be sold at the entrance.",
@@ -35,7 +35,7 @@ const notices = [
     id: 4,
     type: "clubs",
     title: "Chess Club",
-    description: "Weekly Meetup",
+    subHeading: "Weekly Meetup",
     eventDate: "2025-10-09",
     noticeDate: "2025-10-06",
     notice: "Special guest player attending this week.",
@@ -44,7 +44,7 @@ const notices = [
     id: 5,
     type: "sports",
     title: "Soccer",
-    description: "vs Greenfield HS",
+    subHeading: "vs Greenfield HS",
     eventDate: "2025-10-11",
     noticeDate: "2025-10-08",
     notice: "Kickoff time moved to 4 PM.",
@@ -53,7 +53,7 @@ const notices = [
     id: 6,
     type: "academics",
     title: "Science Fair",
-    description: "Project submission",
+    subHeading: "Project submission",
     eventDate: "2025-10-13",
     noticeDate: "2025-10-09",
     notice: "Deadline extended by one day.",
@@ -62,7 +62,7 @@ const notices = [
     id: 7,
     type: "entertainment",
     title: "Concert",
-    description: "Local Band Live",
+    subHeading: "Local Band Live",
     eventDate: "2025-10-14",
     noticeDate: "2025-10-10",
     notice: "Venue changed to school auditorium.",
@@ -71,7 +71,7 @@ const notices = [
     id: 8,
     type: "clubs",
     title: "Drama Club",
-    description: "Rehearsal",
+    subHeading: "Rehearsal",
     eventDate: "2025-10-15",
     noticeDate: "2025-10-12",
     notice: "Rehearsal extended by 30 minutes.",
@@ -79,7 +79,7 @@ const notices = [
 ];
 
 function ViewNoticeScreen({ route }) {
-  const { id, type, title, description, eventDate, noticeDate, notice } =
+  const { id, type, title, subHeading, eventDate, noticeDate, notice } =
     route.params;
 
   const eventDateTemp = new Date(eventDate);
@@ -113,7 +113,7 @@ function ViewNoticeScreen({ route }) {
           <Text style={styles.eventDate}>{formattedEventDate}</Text>
 
           <Text style={styles.descriptionLabel}>📝 Details:</Text>
-          <Text style={styles.description}>{description}</Text>
+          <Text style={styles.description}>{subHeading}</Text>
 
           <Text style={styles.noticeDateLabel}>🕒 Notice Posted:</Text>
           <Text style={styles.noticeDate}>{formattedNoticeDate}</Text>

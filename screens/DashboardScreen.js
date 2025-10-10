@@ -3,7 +3,7 @@ import StudentDashboardScreen from "./StudentDashboardScreen";
 import TeacherDashboardScreen from "./TeacherDashboardScreen";
 
 function DashboardScreen() {
-  const userType = "student";
+  const userType = "teacher";
 
   if (userType === "student") {
     return <StudentDashboardScreen />;

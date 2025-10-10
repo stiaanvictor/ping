@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
+import Modal from "react-native-modal";
 import Colors from "../constants/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryCard from "../components/CategoryCard";
@@ -17,8 +18,10 @@ import NavigationBar from "../components/NavigationBar";
 
 const StudentDashboardScreen = () => {
   const { logout } = useContext(AuthContext);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleLogout = () => {
+    setIsModalVisible(false);
     logout();
   };
 
@@ -28,12 +31,41 @@ const StudentDashboardScreen = () => {
       <View style={styles.appBar}>
         <Text></Text>
         <Text style={styles.appBarText}>Dashboard</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Image
-            source={require("../assets/images/Log out.png")}
-            style={styles.logOut}
-          ></Image>
-        </TouchableOpacity>
+        <View>
+          <TouchableOpacity
+            onPress={() => setIsModalVisible(true)}
+            style={styles.logOutContainer}
+          >
+            <Image
+              source={require("../assets/images/Log out.png")}
+              style={styles.logOut}
+            ></Image>
+          </TouchableOpacity>
+        </View>
+
+        {/* Logout confirmation modal */}
+        <Modal
+          isVisible={isModalVisible}
+          onBackdropPress={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modal}>
+            <Text style={styles.modalText}>
+              Are you sure you want to logout?
+            </Text>
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancel"
+                onPress={() => setIsModalVisible(false)}
+                color={Colors.primary}
+              />
+              <Button
+                title="Logout"
+                onPress={handleLogout}
+                color={Colors.primary}
+              />
+            </View>
+          </View>
+        </Modal>
       </View>
       {/* App Bar End */}
 
@@ -91,14 +123,19 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Light",
     fontWeight: 500,
   },
-  logOut: {
+  logOutContainer: {
     position: "absolute",
     right: 8,
     top: -15,
+  },
+  logOut: {
     resizeMode: "contain",
     height: 30,
     width: 30,
   },
+  modal: { backgroundColor: "white", padding: 20, borderRadius: 10 },
+  modalText: { marginBottom: 20, fontSize: 16, textAlign: "center" },
+  modalButtons: { flexDirection: "row", justifyContent: "space-between" },
   greeting: {
     fontFamily: "Inter-Light",
     fontSize: 22,

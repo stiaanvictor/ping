@@ -2,7 +2,7 @@ import { Image, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Colors from "../constants/colors";
 
-function StudentNoticeCard({
+function TeacherNoticeCard({
   id,
   type,
   title,
@@ -21,7 +21,7 @@ function StudentNoticeCard({
   };
 
   const handlePress = () => {
-    navigation.navigate("ViewNotice", {
+    navigation.navigate("EditNotice", {
       id,
       type,
       title,
@@ -43,14 +43,14 @@ function StudentNoticeCard({
           <Text style={styles.description}>{subHeading}</Text>
         </View>
         <View style={styles.right}>
-          <Text style={styles.date}>{eventDate}</Text>
+          <Text style={styles.date}>Click to Edit</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-export default StudentNoticeCard;
+export default TeacherNoticeCard;
 
 const styles = StyleSheet.create({
   container: {
