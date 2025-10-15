@@ -8,21 +8,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState({
     isLoggedIn: false,
     userId: null,
+    userType: "",
+    sysAdmin: false,
   });
 
-  // Function to log in a user
   const login = (id) => {
     setUser({
       isLoggedIn: true,
       userId: id,
+      userType: "student",
+      sysAdmin: true,
     });
   };
 
-  // Function to log out a user
   const logout = () => {
     setUser({
       isLoggedIn: false,
       userId: null,
+      userType: "",
+      sysAdmin: false,
     });
   };
 

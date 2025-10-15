@@ -20,56 +20,47 @@ function GroupSelectionScreen() {
       <ScrollView
         contentContainerStyle={{
           paddingBottom: 100,
-          marginTop: 20,
           paddingHorizontal: 10,
         }}
       >
         <TopLevelSelector title="Sports">
           <SubLevelSelector title="Rugby">
-            <SubLevelSelector title="u14">
-              <FinalLevelSelector title="A Team" />
-              <FinalLevelSelector title="B Team" />
-              <FinalLevelSelector title="C Team" />
-              <FinalLevelSelector title="D Team" />
-            </SubLevelSelector>
-            <SubLevelSelector title="u15"></SubLevelSelector>
-            <SubLevelSelector title="u16"></SubLevelSelector>
+            <FinalLevelSelector title="u14 A Team" />
+            <FinalLevelSelector title="u14 B Team" />
+            <FinalLevelSelector title="u15 A Team" />
+            <FinalLevelSelector title="u15 B Team" />
           </SubLevelSelector>
-          <SubLevelSelector title="Cricket">
-            <SubLevelSelector title="u14"></SubLevelSelector>
-            <SubLevelSelector title="u15"></SubLevelSelector>
-            <SubLevelSelector title="u16"></SubLevelSelector>
-          </SubLevelSelector>
-          <SubLevelSelector title="Soccer">
-            <SubLevelSelector title="u14"></SubLevelSelector>
-            <SubLevelSelector title="u15"></SubLevelSelector>
-            <SubLevelSelector title="u16"></SubLevelSelector>
-          </SubLevelSelector>
+          <SubLevelSelector title="Cricket"></SubLevelSelector>
+          <SubLevelSelector title="Soccer"></SubLevelSelector>
         </TopLevelSelector>
 
         <TopLevelSelector title="Academics">
           <SubLevelSelector title="Math">
-            <SubLevelSelector title="Grade 8"></SubLevelSelector>
-            <SubLevelSelector title="Grade 9"></SubLevelSelector>
-            <SubLevelSelector title="Grade 10"></SubLevelSelector>
-            <SubLevelSelector title="Grade 11"></SubLevelSelector>
-            <SubLevelSelector title="Grade 12"></SubLevelSelector>
+            <FinalLevelSelector title="Grade 8" />
+            <FinalLevelSelector title="Grade 9" />
+            <FinalLevelSelector title="Grade 10" />
+            <FinalLevelSelector title="Grade 11" />
+            <FinalLevelSelector title="Grade 12" />
           </SubLevelSelector>
           <SubLevelSelector title="History">
-            <SubLevelSelector title="Grade 8"></SubLevelSelector>
-            <SubLevelSelector title="Grade 9"></SubLevelSelector>
-            <SubLevelSelector title="Grade 10"></SubLevelSelector>
-            <SubLevelSelector title="Grade 11"></SubLevelSelector>
-            <SubLevelSelector title="Grade 12"></SubLevelSelector>
+            <FinalLevelSelector title="Grade 8" />
+            <FinalLevelSelector title="Grade 9" />
+            <FinalLevelSelector title="Grade 10" />
+            <FinalLevelSelector title="Grade 11" />
+            <FinalLevelSelector title="Grade 12" />
           </SubLevelSelector>
           <SubLevelSelector title="English">
-            <SubLevelSelector title="Grade 8"></SubLevelSelector>
-            <SubLevelSelector title="Grade 9"></SubLevelSelector>
-            <SubLevelSelector title="Grade 10"></SubLevelSelector>
-            <SubLevelSelector title="Grade 11"></SubLevelSelector>
-            <SubLevelSelector title="Grade 12"></SubLevelSelector>
+            <FinalLevelSelector title="Grade 8" />
+            <FinalLevelSelector title="Grade 9" />
+            <FinalLevelSelector title="Grade 10" />
+            <FinalLevelSelector title="Grade 11" />
+            <FinalLevelSelector title="Grade 12" />
           </SubLevelSelector>
         </TopLevelSelector>
+
+        <TopLevelSelector title="Culture"></TopLevelSelector>
+
+        <TopLevelSelector title="Clubs"></TopLevelSelector>
       </ScrollView>
       <NavigationBar />
     </SafeAreaView>

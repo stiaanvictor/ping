@@ -1,13 +1,15 @@
 import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
 import StudentNavigationBar from "./StudentNavigationBar";
 import TeacherNavigationBar from "./TeacherNavigationBar";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 function NavigationBar() {
-  const userType = "teacher";
+  const { user } = useContext(AuthContext);
 
   return (
     <View style={styles.container}>
-      {userType === "student" ? (
+      {user.userType === "student" || user.userType == "admin" ? (
         <StudentNavigationBar />
       ) : (
         <TeacherNavigationBar />

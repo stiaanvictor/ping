@@ -1,13 +1,15 @@
 import { Text } from "react-native";
 import StudentDashboardScreen from "./StudentDashboardScreen";
 import TeacherDashboardScreen from "./TeacherDashboardScreen";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 function DashboardScreen() {
-  const userType = "teacher";
+  const { user } = useContext(AuthContext);
 
-  if (userType === "student") {
+  if (user.userType === "student" || user.userType == "admin") {
     return <StudentDashboardScreen />;
-  } else if (userType === "teacher") {
+  } else if (user.userType === "teacher") {
     return <TeacherDashboardScreen />;
   } else {
     return <Text>Screen not found</Text>;

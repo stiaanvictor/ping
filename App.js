@@ -11,6 +11,7 @@ import CaledarScreen from "./screens/CalendarScreen";
 import GroupSelectionScreen from "./screens/GroupSelectionScreen";
 import EditNoticeScreen from "./screens/EditNoticeScreen";
 import TeacherGroupsScreen from "./screens/TeacherGroupsScreen";
+import AddCategoryScreen from "./screens/AddCategoryScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -50,6 +51,7 @@ const AppNavigator = () => {
             component={GroupSelectionScreen}
           />
           <Stack.Screen name="TeacherGroups" component={TeacherGroupsScreen} />
+          <Stack.Screen name="AddCategory" component={AddCategoryScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>
