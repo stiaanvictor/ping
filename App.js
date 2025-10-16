@@ -12,6 +12,11 @@ import GroupSelectionScreen from "./screens/GroupSelectionScreen";
 import EditNoticeScreen from "./screens/EditNoticeScreen";
 import TeacherGroupsScreen from "./screens/TeacherGroupsScreen";
 import AddCategoryScreen from "./screens/AddCategoryScreen";
+import AddGroupScreen from "./screens/AddGroupScreen";
+import EditCategoryScreen from "./screens/EditCategoryScreen";
+import EditGroupScreen from "./screens/EditGroupScreen";
+import ManageGroupScreen from "./screens/ManageGroupScreen";
+import CreateNewNoticeScreen from "./screens/CreateNoticeScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -52,6 +57,14 @@ const AppNavigator = () => {
           />
           <Stack.Screen name="TeacherGroups" component={TeacherGroupsScreen} />
           <Stack.Screen name="AddCategory" component={AddCategoryScreen} />
+          <Stack.Screen name="AddGroup" component={AddGroupScreen} />
+          <Stack.Screen name="EditCategory" component={EditCategoryScreen} />
+          <Stack.Screen name="EditGroup" component={EditGroupScreen} />
+          <Stack.Screen name="ManageGroup" component={ManageGroupScreen} />
+          <Stack.Screen
+            name="CreateNewNotice"
+            component={CreateNewNoticeScreen}
+          />
         </Stack.Navigator>
       )}
     </NavigationContainer>

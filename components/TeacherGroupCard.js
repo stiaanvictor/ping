@@ -1,10 +1,13 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import Colors from "../constants/colors";
+import { useNavigation } from "@react-navigation/native";
 
 const TeacherGroupCard = ({ title }) => {
+  const navigation = useNavigation();
+
   const handlePress = () => {
-    console.log(`${title} clicked!`);
+    navigation.navigate("ManageGroup", { title });
   };
 
   return (
@@ -21,15 +24,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginVertical: 8,
-    flexDirection: "row", // arrange title and manage text horizontally
-    justifyContent: "space-between", // push them to edges
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    // iOS shadow
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
-    // Android shadow
     elevation: 6,
   },
   title: {
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
   manage: {
     fontSize: 14,
     color: "#fff",
-    opacity: 0.8, // slightly lighter for subtle hint
+    opacity: 0.8,
   },
 });
 

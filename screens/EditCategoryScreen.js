@@ -6,25 +6,32 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Colors from "../constants/colors";
 import { useState } from "react";
+import Colors from "../constants/colors";
 import ReturnToGroupsButton from "../components/ReturnToGroupsButton";
 
-function AddCategoryScreen({ route }) {
-  const { title } = route.params;
-  const [titleText, setTitleText] = useState("");
+function EditCategoryScreen({ route }) {
+  const { group } = route.params; // expects { group: { title: '...' } }
+
+  const [titleText, setTitleText] = useState(group?.title || "");
+
+  const handleSave = () => {
+    // your save logic here
+    console.log("Saved changes to category:", titleText);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* App Bar Start */}
+      {/* App Bar */}
       <View style={styles.appBar}>
         <Text></Text>
-        <Text style={styles.appBarText}>Add Sub-Category</Text>
+        <Text style={styles.appBarText}>Edit Category</Text>
         <Text></Text>
       </View>
-      {/* App Bar End */}
 
       <View style={styles.formContainer}>
+        <Text style={styles.editingTitle}>Editing {group?.title}</Text>
+
         <Text style={styles.fieldTitle}>Title:</Text>
         <TextInput
           value={titleText}
@@ -32,8 +39,8 @@ function AddCategoryScreen({ route }) {
           style={styles.input}
         />
 
-        <TouchableOpacity style={styles.submitButton}>
-          <Text style={styles.submitButtonText}>Add Category to {title}</Text>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
+          <Text style={styles.submitButtonText}>Save Changes</Text>
         </TouchableOpacity>
       </View>
 
@@ -42,7 +49,7 @@ function AddCategoryScreen({ route }) {
   );
 }
 
-export default AddCategoryScreen;
+export default EditCategoryScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -50,7 +57,7 @@ const styles = StyleSheet.create({
   },
   appBar: {
     flexDirection: "row",
-    justifyContent: "space-between", // pushes items to the edges
+    justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: Colors.primary,
     paddingVertical: 5,
@@ -72,6 +79,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 20,
   },
+  editingTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: Colors.primary,
+    marginBottom: 20,
+    fontFamily: "Inter-Regular",
+  },
   fieldTitle: {
     fontSize: 18,
     fontFamily: "Inter-Light",
@@ -90,21 +104,13 @@ const styles = StyleSheet.create({
     borderColor: "#e4e4e4ff",
     marginTop: -5,
   },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-  },
-  date: {
-    fontSize: 16,
-    fontFamily: "Inter-Regular",
-  },
   submitButton: {
     backgroundColor: Colors.primary,
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 10,
+    marginTop: 20,
   },
   submitButtonText: {
     color: "white",

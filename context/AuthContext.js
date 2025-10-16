@@ -16,8 +16,8 @@ export const AuthProvider = ({ children }) => {
     setUser({
       isLoggedIn: true,
       userId: id,
-      userType: "student",
-      sysAdmin: true,
+      userType: "teacher",
+      sysAdmin: false,
     });
   };
 
