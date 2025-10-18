@@ -17,6 +17,7 @@ import EditCategoryScreen from "./screens/EditCategoryScreen";
 import EditGroupScreen from "./screens/EditGroupScreen";
 import ManageGroupScreen from "./screens/ManageGroupScreen";
 import CreateNewNoticeScreen from "./screens/CreateNoticeScreen";
+import NoticesByCategoryScreen from "./screens/NoticesByCategoryScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -61,6 +62,10 @@ const AppNavigator = () => {
           <Stack.Screen name="EditCategory" component={EditCategoryScreen} />
           <Stack.Screen name="EditGroup" component={EditGroupScreen} />
           <Stack.Screen name="ManageGroup" component={ManageGroupScreen} />
+          <Stack.Screen
+            name="NoticesByCategory"
+            component={NoticesByCategoryScreen}
+          />
           <Stack.Screen
             name="CreateNewNotice"
             component={CreateNewNoticeScreen}

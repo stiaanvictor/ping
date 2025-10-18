@@ -1,86 +1,51 @@
-import { StyleSheet, View } from "react-native";
+import React, { useEffect, useState, useContext } from "react";
+import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
 import StudentNoticeCard from "./StudentNoticeCard";
-
-const data = [
-  {
-    id: 1,
-    type: "sports",
-    title: "Rugby",
-    subHeading: "vs DF Malan",
-    eventDate: "2025-10-05",
-    noticeDate: "2025-10-03",
-    notice: "Match may be moved indoors due to possible rain.",
-  },
-  {
-    id: 2,
-    type: "academics",
-    title: "Math Quiz",
-    subHeading: "Chapter 5 & 6",
-    eventDate: "2025-10-07",
-    noticeDate: "2025-10-02",
-    notice: "Reminder: Bring calculators for the quiz.",
-  },
-  {
-    id: 3,
-    type: "entertainment",
-    title: "Movie Night",
-    subHeading: "Avengers: Endgame",
-    eventDate: "2025-10-08",
-    noticeDate: "2025-10-05",
-    notice: "Snacks will be sold at the entrance.",
-  },
-  {
-    id: 4,
-    type: "clubs",
-    title: "Chess Club",
-    subHeading: "Weekly Meetup",
-    eventDate: "2025-10-09",
-    noticeDate: "2025-10-06",
-    notice: "Special guest player attending this week.",
-  },
-  {
-    id: 5,
-    type: "sports",
-    title: "Soccer",
-    subHeading: "vs Greenfield HS",
-    eventDate: "2025-10-11",
-    noticeDate: "2025-10-08",
-    notice: "Kickoff time moved to 4 PM.",
-  },
-  {
-    id: 6,
-    type: "academics",
-    title: "Science Fair",
-    subHeading: "Project submission",
-    eventDate: "2025-10-13",
-    noticeDate: "2025-10-09",
-    notice: "Deadline extended by one day.",
-  },
-  {
-    id: 7,
-    type: "entertainment",
-    title: "Concert",
-    subHeading: "Local Band Live",
-    eventDate: "2025-10-14",
-    noticeDate: "2025-10-10",
-    notice: "Venue changed to school auditorium.",
-  },
-  {
-    id: 8,
-    type: "clubs",
-    title: "Drama Club",
-    subHeading: "Rehearsal",
-    eventDate: "2025-10-15",
-    noticeDate: "2025-10-12",
-    notice: "Rehearsal extended by 30 minutes.",
-  },
-];
+import { getUserNotices } from "../firebase/firebaseFunctions";
+import { AuthContext } from "../context/AuthContext";
 
 function StudentNoticesSection({ date }) {
-  // Filter notices if a date is provided
+  const { user } = useContext(AuthContext);
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserNotices = async () => {
+      try {
+        if (!user?.userId) return;
+        const data = await getUserNotices(user.email);
+
+        setNotices(data);
+      } catch (error) {
+        console.error("Error fetching user notices:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserNotices();
+  }, [user]);
+
+  // Format Firestore Timestamps to YYYY-MM-DD
+  const formatDate = (timestamp) => {
+    if (timestamp?.seconds) {
+      return new Date(timestamp.seconds * 1000).toISOString().split("T")[0];
+    }
+    return timestamp || "";
+  };
+
+  // Filter notices if a specific date is passed
   const displayedNotices = date
-    ? data.filter((notice) => notice.eventDate === date)
-    : data;
+    ? notices.filter((notice) => formatDate(notice.eventDate) === date)
+    : notices;
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -89,11 +54,11 @@ function StudentNoticesSection({ date }) {
           displayedNotices.map((item) => (
             <StudentNoticeCard
               key={item.id}
-              type={item.type}
+              type={item.category}
               title={item.title}
-              subHeading={item.subHeading}
-              eventDate={item.eventDate}
-              noticeDate={item.noticeDate}
+              subHeading={item.subTitle}
+              eventDate={formatDate(item.eventDate)}
+              noticeDate={formatDate(item.noticeSentDate)}
               notice={item.notice}
             />
           ))
@@ -116,12 +81,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
-    elevation: 8, // for Android shadow
+    elevation: 8,
   },
   notices: {
     backgroundColor: "white",
     borderRadius: 30,
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

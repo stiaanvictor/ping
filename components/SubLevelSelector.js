@@ -1,25 +1,37 @@
-import React, { useContext, useState } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
-import Colors from "../constants/colors";
+import React, { useContext, useState, useEffect } from "react";
 import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
+import Colors from "../constants/colors";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import FinalLevelSelector from "./FinalLevelSelector";
+import { getGroupsBySubCategory } from "../firebase/firebaseFunctions";
 
-const SubLevelSelector = ({ title, children }) => {
+const SubLevelSelector = ({ title, subCategoryId }) => {
   const navigation = useNavigation();
-
   const [open, setOpen] = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const { user } = useContext(AuthContext);
 
-  const onPressHandle = () => {
+  const onPressHandle = async () => {
     setOpen(!open);
+    if (!open && groups.length === 0) {
+      setLoading(true);
+      const fetchedGroups = await getGroupsBySubCategory(subCategoryId);
+      setGroups(fetchedGroups);
+      setLoading(false);
+    }
   };
 
   const addGroupPressed = () => {
@@ -41,7 +53,6 @@ const SubLevelSelector = ({ title, children }) => {
 
   const confirmDelete = () => {
     setConfirmDeleteVisible(false);
-    // your delete logic here
     console.log("Deleted category and its groups");
   };
 
@@ -70,9 +81,31 @@ const SubLevelSelector = ({ title, children }) => {
         />
       </TouchableOpacity>
 
-      {open ? <View style={styles.childrenContainer}>{children}</View> : null}
+      {open && (
+        <View style={styles.childrenContainer}>
+          {loading ? (
+            <Text style={{ color: "#888", marginLeft: 10 }}>
+              Loading groups...
+            </Text>
+          ) : groups.length > 0 ? (
+            groups.map((group) => (
+              <FinalLevelSelector
+                key={group.id}
+                title={group.name}
+                groupId={group.id}
+              />
+            ))
+          ) : (
+            <Text style={{ color: "#888", marginLeft: 10 }}>
+              No groups found.
+            </Text>
+          )}
+        </View>
+      )}
 
-      {/* Main popup */}
+      {/* keep the modals and rest of your original code unchanged below */}
+
+      {/* Admin options popup */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -111,7 +144,7 @@ const SubLevelSelector = ({ title, children }) => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Confirm Delete Popup */}
+      {/* Confirm delete */}
       <Modal
         visible={confirmDeleteVisible}
         transparent={true}

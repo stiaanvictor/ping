@@ -1,12 +1,63 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import NavigationBar from "../components/NavigationBar";
 import Colors from "../constants/colors";
 import TopLevelSelector from "../components/TopLevelSelector";
 import SubLevelSelector from "../components/SubLevelSelector";
-import FinalLevelSelector from "../components/FinalLevelSelector";
+import { useEffect, useState } from "react";
+import { getSubCategories } from "../firebase/firebaseFunctions";
 
 function GroupSelectionScreen() {
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState({
+    Sports: [],
+    Academics: [],
+    Culture: [],
+    Clubs: [],
+  });
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [sports, academics, culture, clubs] = await Promise.all([
+          getSubCategories("Sports"),
+          getSubCategories("Academics"),
+          getSubCategories("Culture"),
+          getSubCategories("Clubs"),
+        ]);
+
+        setCategories({
+          Sports: sports,
+          Academics: academics,
+          Culture: culture,
+          Clubs: clubs,
+        });
+      } catch (error) {
+        console.error("Error loading group data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* App Bar Start */}
@@ -23,45 +74,64 @@ function GroupSelectionScreen() {
           paddingHorizontal: 10,
         }}
       >
+        {/* Sports */}
         <TopLevelSelector title="Sports">
-          <SubLevelSelector title="Rugby">
-            <FinalLevelSelector title="u14 A Team" />
-            <FinalLevelSelector title="u14 B Team" />
-            <FinalLevelSelector title="u15 A Team" />
-            <FinalLevelSelector title="u15 B Team" />
-          </SubLevelSelector>
-          <SubLevelSelector title="Cricket"></SubLevelSelector>
-          <SubLevelSelector title="Soccer"></SubLevelSelector>
+          {categories.Sports.length > 0 ? (
+            categories.Sports.map((sub) => (
+              <SubLevelSelector
+                key={sub.id}
+                title={sub.name}
+                subCategoryId={sub.id}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No sports groups found.</Text>
+          )}
         </TopLevelSelector>
 
         <TopLevelSelector title="Academics">
-          <SubLevelSelector title="Math">
-            <FinalLevelSelector title="Grade 8" />
-            <FinalLevelSelector title="Grade 9" />
-            <FinalLevelSelector title="Grade 10" />
-            <FinalLevelSelector title="Grade 11" />
-            <FinalLevelSelector title="Grade 12" />
-          </SubLevelSelector>
-          <SubLevelSelector title="History">
-            <FinalLevelSelector title="Grade 8" />
-            <FinalLevelSelector title="Grade 9" />
-            <FinalLevelSelector title="Grade 10" />
-            <FinalLevelSelector title="Grade 11" />
-            <FinalLevelSelector title="Grade 12" />
-          </SubLevelSelector>
-          <SubLevelSelector title="English">
-            <FinalLevelSelector title="Grade 8" />
-            <FinalLevelSelector title="Grade 9" />
-            <FinalLevelSelector title="Grade 10" />
-            <FinalLevelSelector title="Grade 11" />
-            <FinalLevelSelector title="Grade 12" />
-          </SubLevelSelector>
+          {categories.Academics.length > 0 ? (
+            categories.Academics.map((sub) => (
+              <SubLevelSelector
+                key={sub.id}
+                title={sub.name}
+                subCategoryId={sub.id}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No academic groups found.</Text>
+          )}
         </TopLevelSelector>
 
-        <TopLevelSelector title="Culture"></TopLevelSelector>
+        <TopLevelSelector title="Culture">
+          {categories.Culture.length > 0 ? (
+            categories.Culture.map((sub) => (
+              <SubLevelSelector
+                key={sub.id}
+                title={sub.name}
+                subCategoryId={sub.id}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No culture groups found.</Text>
+          )}
+        </TopLevelSelector>
 
-        <TopLevelSelector title="Clubs"></TopLevelSelector>
+        <TopLevelSelector title="Clubs">
+          {categories.Clubs.length > 0 ? (
+            categories.Clubs.map((sub) => (
+              <SubLevelSelector
+                key={sub.id}
+                title={sub.name}
+                subCategoryId={sub.id}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No clubs found.</Text>
+          )}
+        </TopLevelSelector>
       </ScrollView>
+
       <NavigationBar />
     </SafeAreaView>
   );
@@ -76,7 +146,7 @@ const styles = StyleSheet.create({
   },
   appBar: {
     flexDirection: "row",
-    justifyContent: "space-between", // pushes items to the edges
+    justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: Colors.primary,
     paddingVertical: 5,
@@ -89,5 +159,16 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "Inter-Light",
     fontWeight: 500,
+  },
+  emptyText: {
+    marginLeft: 20,
+    marginTop: 10,
+    color: "#555",
+    fontSize: 16,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -3,21 +3,35 @@ import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   StyleSheet,
   Image,
-  TouchableOpacity,
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
+import { firebaseLogin } from "../firebase/firebaseFunctions";
 import Colors from "../constants/colors";
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = () => {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    login("1"); // example login with ID 1
+  const handleLogin = async () => {
+    // if (!email || !password) {
+    if (false) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
+    try {
+      // const user = await firebaseLogin(email, password);
+      const user = await firebaseLogin("frikkieviljoen@gmail.com", "Coffee123");
+      login(user.uid, user.email);
+    } catch (err) {
+      console.error(err);
+      setError("Invalid email or password.");
+    }
   };
 
   return (
@@ -27,32 +41,32 @@ const LoginScreen = ({ navigation }) => {
         style={styles.logo}
       />
       <Text style={styles.title}>Login</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          setError("");
+        }}
+        autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
         placeholder="Password"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          setError("");
+        }}
       />
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text
-          style={{ color: "white", fontSize: 18, fontFamily: "Inter-Regular" }}
-        >
-          Login
-        </Text>
-      </TouchableOpacity>
-      <Text style={styles.or}>OR</Text>
-      <TouchableOpacity onPress={handleLogin}>
-        <Image
-          source={require("../assets/images/google login.jpg")}
-          style={styles.googleLogin}
-        ></Image>
+        <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -72,7 +86,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
     fontFamily: "Inter-Regular",
-    fontWeight: 500,
+    fontWeight: "500",
   },
   input: {
     backgroundColor: "#F3F3F3",
@@ -84,20 +98,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Inter-Regular",
   },
+  error: {
+    color: "red",
+    marginBottom: 10,
+    fontFamily: "Inter-Regular",
+  },
   button: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 60,
     paddingVertical: 10,
     borderRadius: 10,
   },
-  or: {
-    marginTop: 50,
-    fontSize: 25,
-    fontFamily: "Inter-Light",
-  },
-  googleLogin: {
-    resizeMode: "contain",
-    marginTop: 50,
-    height: 45,
+  buttonText: {
+    color: "white",
+    fontSize: 18,
+    fontFamily: "Inter-Regular",
   },
 });

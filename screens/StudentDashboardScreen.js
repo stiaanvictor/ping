@@ -19,6 +19,7 @@ import NavigationBar from "../components/NavigationBar";
 const StudentDashboardScreen = () => {
   const { logout } = useContext(AuthContext);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const { user } = useContext(AuthContext);
 
   const handleLogout = () => {
     setIsModalVisible(false);
@@ -70,7 +71,7 @@ const StudentDashboardScreen = () => {
       {/* App Bar End */}
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <Text style={styles.greeting}>Welcome John Doe!</Text>
+        <Text style={styles.greeting}>Welcome {user.name}!</Text>
 
         {/* 4 Categories Start */}
         <View style={styles.categoriesContainer}>
@@ -83,7 +84,7 @@ const StudentDashboardScreen = () => {
             imageSource={require("../assets/images/sports.png")}
           />
           <CategoryCard
-            title="Entertainment"
+            title="Culture"
             imageSource={require("../assets/images/entertainment.png")}
           />
           <CategoryCard
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     marginTop: 15,
     marginLeft: 10,
-    color: Colors.primary,
+    color: "black",
   },
   categoriesContainer: {
     marginTop: 15,
@@ -154,6 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginTop: 15,
     marginLeft: 20,
-    color: Colors.primary,
+    color: "black",
   },
 });

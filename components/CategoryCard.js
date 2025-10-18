@@ -8,12 +8,16 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Colors from "../constants/colors";
+import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
 function CategoryCard({ title, imageSource }) {
+  const navigation = useNavigation();
+
   const handlePress = () => {
     console.log(title + " pressed");
+    navigation.navigate("NoticesByCategory", { category: title });
   };
 
   return (

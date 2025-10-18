@@ -84,7 +84,7 @@ function TeacherDashboardScreen() {
             imageSource={require("../assets/images/sports.png")}
           />
           <CategoryCard
-            title="Entertainment"
+            title="Culture"
             imageSource={require("../assets/images/entertainment.png")}
           />
           <CategoryCard

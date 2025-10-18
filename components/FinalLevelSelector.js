@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import {
   TouchableOpacity,
   Modal,
@@ -12,39 +12,91 @@ import Colors from "../constants/colors";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import {
+  subscribeToGroup,
+  unsubscribeFromGroup,
+} from "../firebase/firebaseFunctions";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db, auth } from "../firebase/firebaseConfig";
 
-const FinalLevelSelector = ({ title }) => {
+const FinalLevelSelector = ({ title, groupId }) => {
   const navigation = useNavigation();
-
-  const [notifications, setNotifications] = useState(false);
+  const { user } = useContext(AuthContext);
+  const [subscribed, setSubscribed] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
-  const { user } = useContext(AuthContext);
 
-  const toggleNotifications = () => {
-    setNotifications(!notifications);
+  const userEmail = auth.currentUser?.email; // <-- use Firebase Auth, not context
+
+  const checkSubscription = useCallback(async () => {
+    try {
+      if (!userEmail || !groupId) return;
+
+      // fetch the user doc by email
+      const usersRef = collection(db, "users");
+      const qUsers = query(usersRef, where("email", "==", userEmail));
+      const snap = await getDocs(qUsers);
+      if (snap.empty) {
+        setSubscribed(false);
+        return;
+      }
+      const data = snap.docs[0].data();
+      const groupIDs = data.groupIDs || [];
+
+      // groupIDs can be strings or DocumentReferences; handle both
+      const isSub = groupIDs.some((g) => {
+        if (typeof g === "string") return g === groupId;
+        // Firestore DocumentReference has .id
+        if (g?.id) return g.id === groupId;
+        // very defensive fallback
+        if (g?.path) return g.path.endsWith(`/${groupId}`);
+        return false;
+      });
+
+      setSubscribed(isSub);
+    } catch (e) {
+      console.error("Error checking subscription:", e);
+      setSubscribed(false);
+    }
+  }, [userEmail, groupId]);
+
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
+
+  const toggleSubscription = async () => {
+    try {
+      if (!userEmail) return;
+
+      if (subscribed) {
+        await unsubscribeFromGroup(userEmail, groupId);
+      } else {
+        await subscribeToGroup(userEmail, groupId);
+      }
+
+      // re-check from Firestore to stay in sync
+      await checkSubscription();
+    } catch (error) {
+      console.error("Error toggling subscription:", error);
+    }
   };
 
   const popupPress = () => setIsModalVisible(true);
-
   const handleDeletePress = () => {
     setIsModalVisible(false);
     setConfirmDeleteVisible(true);
   };
-
   const confirmDelete = () => {
     setConfirmDeleteVisible(false);
-    // Your delete logic here
     console.log("Final-level item deleted");
   };
-
   const editGroupPressed = () => {
     navigation.navigate("EditGroup", { group: { title } });
   };
 
   return (
     <View>
-      <TouchableOpacity onPress={toggleNotifications} style={styles.container}>
+      <TouchableOpacity onPress={toggleSubscription} style={styles.container}>
         <Text style={styles.title}>{title}</Text>
 
         {user.sysAdmin ? (
@@ -55,17 +107,17 @@ const FinalLevelSelector = ({ title }) => {
 
         <View>
           <MaterialIcons
-            name={notifications ? "notifications-active" : "notifications-off"}
+            name={subscribed ? "notifications-active" : "notifications-off"}
             size={24}
             color={Colors.primary}
           />
         </View>
       </TouchableOpacity>
 
-      {/* Main options popup */}
+      {/* Admin popup */}
       <Modal
         visible={isModalVisible}
-        transparent={true}
+        transparent
         animationType="fade"
         onRequestClose={() => setIsModalVisible(false)}
       >
@@ -73,7 +125,7 @@ const FinalLevelSelector = ({ title }) => {
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
-                <View style={styles.modalButtons}>
+                <View className="modalButtons">
                   <TouchableOpacity
                     style={styles.editButton}
                     onPress={editGroupPressed}
@@ -94,10 +146,10 @@ const FinalLevelSelector = ({ title }) => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Confirm Delete Popup */}
+      {/* Confirm Delete */}
       <Modal
         visible={confirmDeleteVisible}
-        transparent={true}
+        transparent
         animationType="fade"
         onRequestClose={() => setConfirmDeleteVisible(false)}
       >

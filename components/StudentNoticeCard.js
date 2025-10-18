@@ -14,10 +14,10 @@ function StudentNoticeCard({
   const navigation = useNavigation();
 
   const images = {
-    sports: require("../assets/images/sports.png"),
-    academics: require("../assets/images/academics.png"),
-    entertainment: require("../assets/images/entertainment.png"),
-    clubs: require("../assets/images/clubs.png"),
+    Sports: require("../assets/images/sports.png"),
+    Academics: require("../assets/images/academics.png"),
+    Culture: require("../assets/images/entertainment.png"),
+    Clubs: require("../assets/images/clubs.png"),
   };
 
   const handlePress = () => {
