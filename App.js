@@ -1,10 +1,11 @@
 import { useContext, useState, useEffect } from "react";
+import { AppState } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
-import LoginScreen from "./screens/LoginScreen";
 import * as Font from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
+import LoginScreen from "./screens/LoginScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import ViewNoticeScreen from "./screens/ViewNoticeScreen";
 import CaledarScreen from "./screens/CalendarScreen";
@@ -23,11 +24,18 @@ const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const { user } = useContext(AuthContext);
-
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
+  async function hideNavBar() {
+    try {
+      await NavigationBar.setVisibilityAsync("hidden");
+      await NavigationBar.setBehaviorAsync("overlay-swipe");
+    } catch (err) {
+      console.warn("Failed to hide navigation bar:", err);
+    }
+  }
+
   useEffect(() => {
-    NavigationBar.setVisibilityAsync("hidden");
     async function loadFonts() {
       await Font.loadAsync({
         "Inter-Regular": require("./assets/fonts/Inter-VariableFont_opsz,wght.ttf"),
@@ -35,13 +43,25 @@ const AppNavigator = () => {
       });
       setFontsLoaded(true);
     }
+
     loadFonts();
+    hideNavBar();
+
+    // Re-hide when app regains focus
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") hideNavBar();
+    });
+
+    return () => subscription.remove();
   }, []);
 
   if (!fontsLoaded) return null;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      onReady={hideNavBar}
+      onStateChange={hideNavBar} // Re-hide after navigation changes
+    >
       {!user.isLoggedIn ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -5,21 +6,28 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ReturnToDashboardButton from "../components/ReturnToDashboardButton";
-import { useState } from "react";
 import Colors from "../constants/colors";
 import { EvilIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { createNotice } from "../firebase/firebaseFunctions";
+import { useNavigation } from "@react-navigation/native";
 
 function CreateNewNoticeScreen({ route }) {
-  const { groupTitle } = route.params;
+  const { groupTitle, groupId } = route.params;
+  const navigation = useNavigation();
+
+  console.log(groupId);
+
   const [titleText, setTitleText] = useState("");
   const [subHeadingText, setSubHeadingText] = useState("");
   const [noticeText, setNoticeText] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formattedEventDate = selectedDate.toLocaleDateString("en-GB", {
     day: "numeric",
@@ -32,8 +40,39 @@ function CreateNewNoticeScreen({ route }) {
     if (selected) setSelectedDate(selected);
   };
 
-  const handleCreate = () => {
-    console.log("Created new notice for", groupTitle);
+  const handleCreate = async () => {
+    // ✅ Validate inputs
+    if (!titleText.trim() || !subHeadingText.trim() || !noticeText.trim()) {
+      Alert.alert(
+        "Missing Information",
+        "Please fill in all fields before continuing."
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createNotice({
+        title: titleText.trim(),
+        subTitle: subHeadingText.trim(),
+        category: "Academics", // Default category, or you can make it dynamic later
+        eventDate: selectedDate,
+        groupID: groupId,
+        notice: noticeText.trim(),
+      });
+
+      Alert.alert(
+        "Notice Created",
+        "Your notice has been successfully created and sent.",
+        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
+      );
+    } catch (error) {
+      console.error("Error creating notice:", error);
+      Alert.alert("Error", "Something went wrong while creating the notice.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,8 +125,14 @@ function CreateNewNoticeScreen({ route }) {
           multiline={true}
         />
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleCreate}>
-          <Text style={styles.submitButtonText}>Create and Send Notice</Text>
+        <TouchableOpacity
+          style={[styles.submitButton, isSubmitting && { opacity: 0.6 }]}
+          onPress={handleCreate}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? "Creating..." : "Create and Send Notice"}
+          </Text>
         </TouchableOpacity>
       </View>
 

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -5,20 +6,38 @@ import {
   TouchableOpacity,
   View,
   Platform,
-  Button,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ReturnToDashboardButton from "../components/ReturnToDashboardButton";
-import { useState } from "react";
 import Colors from "../constants/colors";
-import { AntDesign, EvilIcons } from "@expo/vector-icons";
+import { EvilIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { updateNotice } from "../firebase/firebaseFunctions";
+import { useNavigation } from "@react-navigation/native";
 
 function EditNoticeScreen({ route }) {
-  const { id, type, title, subHeading, eventDate, noticeDate, notice } =
-    route.params;
+  const { item } = route.params;
+  const navigation = useNavigation();
 
-  const eventDateTemp = new Date(eventDate);
+  // ---- Normalize Firestore Timestamp/various date shapes -> JS Date
+  const toJSDate = (val) => {
+    if (!val) return new Date();
+    if (typeof val?.toDate === "function") return val.toDate(); // Firestore Timestamp instance
+    if (typeof val === "string") return new Date(val); // ISO/string
+    if (typeof val === "number") return new Date(val > 1e12 ? val : val * 1000); // ms or sec
+    if (val?.seconds) return new Date(val.seconds * 1000); // plain object {seconds,nanoseconds}
+    return new Date();
+  };
+
+  const eventDateTemp = toJSDate(item.eventDate);
+
+  const [selectedDate, setSelectedDate] = useState(eventDateTemp);
+  const [titleText, setTitleText] = useState(item.title || "");
+  const [subHeadingText, setSubHeadingText] = useState(item.subTitle || "");
+  const [noticeText, setNoticeText] = useState(item.notice || "");
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formattedEventDate, setFormattedEventDate] = useState(
     eventDateTemp.toLocaleDateString("en-GB", {
@@ -28,23 +47,46 @@ function EditNoticeScreen({ route }) {
     })
   );
 
-  const [titleText, setTitleText] = useState(title);
-  const [subHeadingText, setSubHeadingText] = useState(subHeading);
-  const [noticeText, setNoticeText] = useState("");
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(eventDateTemp);
-
-  const onChange = (event, selectedDate) => {
+  const onChange = (event, picked) => {
     setShowCalendar(false);
-    if (selectedDate) {
-      setSelectedDate(selectedDate);
+    if (picked) {
+      setSelectedDate(picked);
       setFormattedEventDate(
-        selectedDate.toLocaleDateString("en-GB", {
+        picked.toLocaleDateString("en-GB", {
           day: "numeric",
           month: "long",
           year: "numeric",
         })
       );
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!titleText.trim() || !subHeadingText.trim() || !noticeText.trim()) {
+      Alert.alert("Missing Information", "Please fill in all fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await updateNotice(item.id, {
+        title: titleText.trim(),
+        subTitle: subHeadingText.trim(),
+        category: item.category || "Academics",
+        eventDate: selectedDate,
+        groupID: item.groupID,
+        notice: noticeText.trim(),
+      });
+
+      Alert.alert("Success", "Notice updated successfully.", [
+        { text: "OK", onPress: () => navigation.navigate("Dashboard") },
+      ]);
+    } catch (error) {
+      console.error("Error updating notice:", error);
+      Alert.alert("Error", "Failed to update notice. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,9 +141,13 @@ function EditNoticeScreen({ route }) {
           multiline={true}
         />
 
-        <TouchableOpacity style={styles.submitButton}>
+        <TouchableOpacity
+          style={[styles.submitButton, isSubmitting && { opacity: 0.6 }]}
+          onPress={handleUpdate}
+          disabled={isSubmitting}
+        >
           <Text style={styles.submitButtonText}>
-            Update And Send Out Notice
+            {isSubmitting ? "Updating..." : "Update And Send Out Notice"}
           </Text>
         </TouchableOpacity>
       </View>

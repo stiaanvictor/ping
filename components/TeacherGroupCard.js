@@ -1,18 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import Colors from "../constants/colors";
 import { useNavigation } from "@react-navigation/native";
+import { getSubCategoryById } from "../firebase/firebaseFunctions";
 
-const TeacherGroupCard = ({ title }) => {
+const TeacherGroupCard = ({ title, id, subCategoryID }) => {
   const navigation = useNavigation();
+  const [subCategory, setSubCategory] = useState();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSubcategory = async () => {
+      const fetchedSubCategory = await getSubCategoryById(subCategoryID);
+      setSubCategory(fetchedSubCategory);
+      setLoading(false);
+    };
+    fetchSubcategory();
+  }, []);
 
   const handlePress = () => {
-    navigation.navigate("ManageGroup", { title });
+    navigation.navigate("ManageGroup", { title, id });
   };
 
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>
+        {loading ? "" : subCategory.name}: {title}
+      </Text>
       <Text style={styles.manage}>Click to Manage</Text>
     </TouchableOpacity>
   );

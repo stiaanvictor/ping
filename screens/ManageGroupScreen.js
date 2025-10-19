@@ -1,62 +1,67 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../constants/colors";
 import ReturnToDashboardButton from "../components/ReturnToDashboardButton";
 import { useNavigation } from "@react-navigation/native";
+import { getNoticesByGroupId } from "../firebase/firebaseFunctions";
 
 const ManageGroupScreen = ({ route }) => {
-  const { title } = route.params;
+  const { title, id } = route.params;
   const navigation = useNavigation();
 
-  const notices = [
-    {
-      id: 1,
-      type: "sports",
-      title: "Rugby",
-      subHeading: "vs DF Malan",
-      eventDate: "2025-10-05",
-      noticeDate: "2025-10-03",
-      notice: "Match may be moved indoors due to possible rain.",
-    },
-    {
-      id: 2,
-      type: "academics",
-      title: "Math Quiz",
-      subHeading: "Chapter 5 & 6",
-      eventDate: "2025-10-07",
-      noticeDate: "2025-10-02",
-      notice: "Reminder: Bring calculators for the quiz.",
-    },
-  ];
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const fetchedNotices = await getNoticesByGroupId(id);
+        setNotices(fetchedNotices);
+      } catch (error) {
+        console.error("Error fetching notices:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, [id]);
 
   const handleNoticePress = (item) => {
-    navigation.navigate("EditNotice", item);
+    navigation.navigate("EditNotice", { item });
   };
 
   const handleCreateNew = () => {
-    navigation.navigate("CreateNewNotice", { groupTitle: title });
+    navigation.navigate("CreateNewNotice", { groupTitle: title, groupId: id });
   };
 
-  const renderNotice = ({ item }) => (
-    <TouchableOpacity
-      style={styles.noticeCard}
-      onPress={() => handleNoticePress(item)}
-    >
-      <View>
-        <Text style={styles.noticeTitle}>{item.title}</Text>
-        <Text style={styles.noticeSub}>{item.subHeading}</Text>
-        <Text style={styles.noticeDate}>Event Date: {item.eventDate}</Text>
-      </View>
-      <Text style={styles.editText}>Edit</Text>
-    </TouchableOpacity>
-  );
+  const renderNotice = ({ item }) => {
+    const eventDate = item.eventDate?.seconds
+      ? new Date(item.eventDate.seconds * 1000).toLocaleDateString()
+      : String(item.eventDate || "N/A");
+
+    return (
+      <TouchableOpacity
+        style={styles.noticeCard}
+        onPress={() => handleNoticePress(item)}
+      >
+        <View>
+          <Text style={styles.noticeTitle}>{item.title}</Text>
+          <Text style={styles.noticeSub}>{item.subTitle}</Text>
+          <Text style={styles.noticeDate}>Event Date: {eventDate}</Text>
+        </View>
+        <Text style={styles.editText}>Edit</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -70,12 +75,21 @@ const ManageGroupScreen = ({ route }) => {
       {/* Notices List */}
       <View style={styles.contentContainer}>
         <Text style={styles.sectionTitle}>Notices Sent Out:</Text>
-        <FlatList
-          data={notices}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderNotice}
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
+
+        <View style={styles.noticeListBox}>
+          {loading ? (
+            <Text style={styles.loadingText}>Loading...</Text>
+          ) : notices.length > 0 ? (
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={true}
+            >
+              {notices.map((item) => renderNotice({ item }))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.noNoticesText}>No notices found.</Text>
+          )}
+        </View>
       </View>
 
       {/* Create New Notice Button */}
@@ -122,14 +136,33 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: "Inter-Regular",
-    marginBottom: 15,
+    marginBottom: 10,
     color: Colors.primary,
+  },
+  noticeListBox: {
+    height: 400, // fixed scroll area
+    borderRadius: 10,
+    padding: 10,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: "Inter-Regular",
+    color: "gray",
+    textAlign: "center",
+    marginVertical: 20,
+  },
+  noNoticesText: {
+    fontSize: 16,
+    fontFamily: "Inter-Regular",
+    color: "gray",
+    textAlign: "center",
+    marginVertical: 20,
   },
   noticeCard: {
     backgroundColor: Colors.primary,
     borderRadius: 10,
     padding: 15,
-    marginBottom: 15,
+    marginBottom: 10,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
