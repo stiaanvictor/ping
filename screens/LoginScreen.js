@@ -26,8 +26,9 @@ const LoginScreen = () => {
 
     try {
       // const user = await firebaseLogin(email, password);
-      // const user = await firebaseLogin("alex47rivera@gmail.com", "Coffee123");
-      const user = await firebaseLogin("frikkieviljoen@gmail.com", "Coffee123");
+      const user = await firebaseLogin("alex47rivera@gmail.com", "Coffee123");
+      // const user = await firebaseLogin("frikkieviljoen@gmail.com", "Coffee123");
+      // const user = await firebaseLogin("sebastian@gmail.com", "Coffee123");
       login(user.email);
     } catch (err) {
       console.error(err);

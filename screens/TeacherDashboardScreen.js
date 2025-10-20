@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
 import Modal from "react-native-modal";
@@ -16,12 +17,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryCard from "../components/CategoryCard";
 import NavigationBar from "../components/NavigationBar";
 import { getNoticesForManagedGroups } from "../firebase/firebaseFunctions";
+import { useNavigation } from "@react-navigation/native";
 
 function TeacherDashboardScreen() {
   const { user, logout } = useContext(AuthContext);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   const handleLogout = () => {
     setIsModalVisible(false);
@@ -43,25 +46,34 @@ function TeacherDashboardScreen() {
     fetchNotices();
   }, [user?.userId]);
 
+  const handleNoticePress = (item) => {
+    navigation.navigate("EditNotice", { item });
+  };
+
   const renderNotice = ({ item }) => {
     const eventDate = item.eventDate?.seconds
       ? new Date(item.eventDate.seconds * 1000).toLocaleDateString()
       : String(item.eventDate || "N/A");
 
     return (
-      <View style={styles.noticeCard}>
+      <TouchableOpacity
+        key={item.id}
+        style={styles.noticeCard}
+        onPress={() => handleNoticePress(item)}
+      >
         <View>
           <Text style={styles.noticeTitle}>{item.title}</Text>
           <Text style={styles.noticeSub}>{item.subTitle}</Text>
           <Text style={styles.noticeDate}>Event Date: {eventDate}</Text>
         </View>
-      </View>
+        <Text style={styles.editText}>Edit</Text>
+      </TouchableOpacity>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ✅ Original App Bar Restored */}
+      {/* ✅ App Bar */}
       <View style={styles.appBar}>
         <Text></Text>
         <Text style={styles.appBarText}>Dashboard</Text>
@@ -77,7 +89,7 @@ function TeacherDashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Logout confirmation modal */}
+        {/* Logout Modal */}
         <Modal
           isVisible={isModalVisible}
           onBackdropPress={() => setIsModalVisible(false)}
@@ -102,7 +114,7 @@ function TeacherDashboardScreen() {
         </Modal>
       </View>
 
-      {/* ✅ Main scroll via FlatList */}
+      {/* ✅ Main Layout */}
       <FlatList
         ListHeaderComponent={
           <>
@@ -130,25 +142,25 @@ function TeacherDashboardScreen() {
               />
             </View>
 
-            {/* Notices Section */}
-            <Text style={styles.upcomingEventsTitle}>Your Sent Notices:</Text>
-            <View style={styles.noticeContainer}>
+            {/* ✅ Notices Section (same as ManageGroupScreen) */}
+            <Text style={styles.sectionTitle}>Your Sent Notices:</Text>
+            <View style={styles.noticeListBox}>
               {loading ? (
-                <ActivityIndicator size="large" color={Colors.primary} />
+                <Text style={styles.loadingText}>Loading...</Text>
               ) : notices.length > 0 ? (
-                <FlatList
-                  data={notices}
-                  keyExtractor={(item) => item.id.toString()}
-                  renderItem={renderNotice}
-                  scrollEnabled={false} // ✅ avoids nested scroll warnings
-                />
+                <ScrollView
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  showsVerticalScrollIndicator={true}
+                >
+                  {notices.map((item) => renderNotice({ item }))}
+                </ScrollView>
               ) : (
                 <Text style={styles.noNoticesText}>No notices found.</Text>
               )}
             </View>
           </>
         }
-        data={[]} // no data here — header holds the layout
+        data={[]} // header-only layout
         renderItem={null}
         contentContainerStyle={{ paddingBottom: 100 }}
       />
@@ -163,7 +175,6 @@ export default TeacherDashboardScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#EFEFEF" },
 
-  // ✅ Restored original app bar design
   appBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -208,28 +219,45 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-around",
   },
-  upcomingEventsTitle: {
-    fontFamily: "Inter-Light",
-    fontSize: 20,
-    marginTop: 15,
-    marginLeft: 20,
-    color: "black",
-  },
 
-  // ✅ White notice box restored
-  noticeContainer: {
+  // ✅ Matches ManageGroupScreen styles
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: "Inter-Regular",
+    marginTop: 20,
+    marginLeft: 20,
+    color: Colors.primary,
+  },
+  noticeListBox: {
     backgroundColor: "white",
     marginHorizontal: 20,
     marginTop: 10,
     borderRadius: 15,
-    padding: 15,
-    minHeight: 200,
+    padding: 10,
+    height: 400,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: "Inter-Regular",
+    color: "gray",
+    textAlign: "center",
+    marginVertical: 20,
+  },
+  noNoticesText: {
+    fontSize: 16,
+    fontFamily: "Inter-Regular",
+    color: "gray",
+    textAlign: "center",
+    marginVertical: 20,
   },
   noticeCard: {
     backgroundColor: Colors.primary,
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   noticeTitle: {
     color: "white",
@@ -246,10 +274,9 @@ const styles = StyleSheet.create({
     color: "#e0e0e0",
     fontSize: 12,
   },
-  noNoticesText: {
+  editText: {
+    color: "white",
+    fontWeight: "bold",
     fontSize: 16,
-    color: "gray",
-    textAlign: "center",
-    marginTop: 20,
   },
 });

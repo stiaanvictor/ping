@@ -13,20 +13,19 @@ import ReturnToDashboardButton from "../components/ReturnToDashboardButton";
 import Colors from "../constants/colors";
 import { EvilIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { updateNotice } from "../firebase/firebaseFunctions";
+import { updateNotice, deleteNotice } from "../firebase/firebaseFunctions";
 import { useNavigation } from "@react-navigation/native";
 
 function EditNoticeScreen({ route }) {
   const { item } = route.params;
   const navigation = useNavigation();
 
-  // ---- Normalize Firestore Timestamp/various date shapes -> JS Date
   const toJSDate = (val) => {
     if (!val) return new Date();
-    if (typeof val?.toDate === "function") return val.toDate(); // Firestore Timestamp instance
-    if (typeof val === "string") return new Date(val); // ISO/string
-    if (typeof val === "number") return new Date(val > 1e12 ? val : val * 1000); // ms or sec
-    if (val?.seconds) return new Date(val.seconds * 1000); // plain object {seconds,nanoseconds}
+    if (typeof val?.toDate === "function") return val.toDate();
+    if (typeof val === "string") return new Date(val);
+    if (typeof val === "number") return new Date(val > 1e12 ? val : val * 1000);
+    if (val?.seconds) return new Date(val.seconds * 1000);
     return new Date();
   };
 
@@ -90,6 +89,31 @@ function EditNoticeScreen({ route }) {
     }
   };
 
+  const handleDelete = async () => {
+    Alert.alert(
+      "Confirm Deletion",
+      "Are you sure you want to delete this notice? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteNotice(item.id);
+              Alert.alert("Deleted", "Notice deleted successfully.", [
+                { text: "OK", onPress: () => navigation.navigate("Dashboard") },
+              ]);
+            } catch (error) {
+              console.error("Error deleting notice:", error);
+              Alert.alert("Error", "Failed to delete notice.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* App Bar Start */}
@@ -150,6 +174,15 @@ function EditNoticeScreen({ route }) {
             {isSubmitting ? "Updating..." : "Update And Send Out Notice"}
           </Text>
         </TouchableOpacity>
+
+        {/* 🗑️ Delete Notice Button */}
+        <TouchableOpacity
+          style={[styles.deleteButton, isSubmitting && { opacity: 0.6 }]}
+          onPress={handleDelete}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.deleteButtonText}>Delete Notice</Text>
+        </TouchableOpacity>
       </View>
 
       <ReturnToDashboardButton />
@@ -165,7 +198,7 @@ const styles = StyleSheet.create({
   },
   appBar: {
     flexDirection: "row",
-    justifyContent: "space-between", // pushes items to the edges
+    justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: Colors.primary,
     paddingVertical: 5,
@@ -222,6 +255,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   submitButtonText: {
+    color: "white",
+    fontFamily: "Inter-Light",
+    fontSize: 18,
+  },
+  deleteButton: {
+    backgroundColor: "#dc3545",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 10,
+    marginTop: 15,
+  },
+  deleteButtonText: {
     color: "white",
     fontFamily: "Inter-Light",
     fontSize: 18,

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,17 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import Colors from "../constants/colors";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import FinalLevelSelector from "./FinalLevelSelector";
-import { getGroupsBySubCategory } from "../firebase/firebaseFunctions";
+import {
+  getGroupsBySubCategory,
+  deleteSubCategoryAndGroups,
+} from "../firebase/firebaseFunctions";
 
 const SubLevelSelector = ({ title, subCategoryId }) => {
   const navigation = useNavigation();
@@ -36,12 +40,12 @@ const SubLevelSelector = ({ title, subCategoryId }) => {
 
   const addGroupPressed = () => {
     setIsModalVisible(false);
-    navigation.navigate("AddGroup", { title });
+    navigation.navigate("AddGroup", { title, subCategoryId });
   };
 
   const editGroupPressed = () => {
     setIsModalVisible(false);
-    navigation.navigate("EditCategory", { group: { title } });
+    navigation.navigate("EditCategory", { group: { title, subCategoryId } });
   };
 
   const popupPress = () => setIsModalVisible(true);
@@ -51,9 +55,19 @@ const SubLevelSelector = ({ title, subCategoryId }) => {
     setConfirmDeleteVisible(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     setConfirmDeleteVisible(false);
-    console.log("Deleted category and its groups");
+    try {
+      await deleteSubCategoryAndGroups(subCategoryId);
+      Alert.alert(
+        "Deleted",
+        `${title} and its groups were deleted successfully.`
+      );
+      console.log(`Deleted subCategory ${subCategoryId} and all groups.`);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      Alert.alert("Error", "Failed to delete category and its groups.");
+    }
   };
 
   return (
@@ -65,7 +79,7 @@ const SubLevelSelector = ({ title, subCategoryId }) => {
       >
         <Text style={styles.title}>{title}</Text>
 
-        {user.sysAdmin ? (
+        {user.userType == "admin" ? (
           <TouchableOpacity onPress={popupPress}>
             <AntDesign name="more" size={24} color="white" />
           </TouchableOpacity>
@@ -102,8 +116,6 @@ const SubLevelSelector = ({ title, subCategoryId }) => {
           )}
         </View>
       )}
-
-      {/* keep the modals and rest of your original code unchanged below */}
 
       {/* Admin options popup */}
       <Modal
@@ -144,7 +156,7 @@ const SubLevelSelector = ({ title, subCategoryId }) => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Confirm delete */}
+      {/* Confirm delete modal */}
       <Modal
         visible={confirmDeleteVisible}
         transparent={true}

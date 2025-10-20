@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  FlatList,
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,13 +42,14 @@ const ManageGroupScreen = ({ route }) => {
     navigation.navigate("CreateNewNotice", { groupTitle: title, groupId: id });
   };
 
-  const renderNotice = ({ item }) => {
+  const renderNotice = (item) => {
     const eventDate = item.eventDate?.seconds
       ? new Date(item.eventDate.seconds * 1000).toLocaleDateString()
       : String(item.eventDate || "N/A");
 
     return (
       <TouchableOpacity
+        key={item.id || item.title} // ✅ unique key added here
         style={styles.noticeCard}
         onPress={() => handleNoticePress(item)}
       >
@@ -84,7 +84,7 @@ const ManageGroupScreen = ({ route }) => {
               contentContainerStyle={{ paddingBottom: 20 }}
               showsVerticalScrollIndicator={true}
             >
-              {notices.map((item) => renderNotice({ item }))}
+              {notices.map((item) => renderNotice(item))}
             </ScrollView>
           ) : (
             <Text style={styles.noNoticesText}>No notices found.</Text>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   noticeListBox: {
-    height: 400, // fixed scroll area
+    height: 400,
     borderRadius: 10,
     padding: 10,
   },

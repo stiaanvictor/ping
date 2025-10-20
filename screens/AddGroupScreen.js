@@ -6,60 +6,84 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Colors from "../constants/colors";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import { Checkbox } from "react-native-paper"; // make sure you have react-native-paper installed
+import { Checkbox } from "react-native-paper";
 import ReturnToGroupsButton from "../components/ReturnToGroupsButton";
+import {
+  fetchTeachers,
+  addGroup,
+  addGroupToUser,
+} from "../firebase/firebaseFunctions";
 
 function AddGroupScreen({ route }) {
-  const { title } = route.params;
+  const { title, subCategoryId } = route.params;
   const [titleText, setTitleText] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [users, setUsers] = useState([
-    { id: "1", name: "John Smith", hasPermission: false },
-    { id: "2", name: "Mary Jones", hasPermission: false },
-    { id: "3", name: "Alex Brown", hasPermission: false },
-    { id: "4", name: "Sarah Johnson", hasPermission: false },
-    { id: "5", name: "Michael Davis", hasPermission: false },
-    { id: "6", name: "Emily Wilson", hasPermission: false },
-    { id: "7", name: "David Anderson", hasPermission: false },
-    { id: "8", name: "Jessica Martinez", hasPermission: false },
-    { id: "9", name: "Chris Taylor", hasPermission: false },
-    { id: "10", name: "Amanda Thomas", hasPermission: false },
-    { id: "11", name: "Daniel White", hasPermission: false },
-    { id: "12", name: "Laura Harris", hasPermission: false },
-    { id: "13", name: "Matthew Clark", hasPermission: false },
-    { id: "14", name: "Olivia Lewis", hasPermission: false },
-    { id: "15", name: "James Walker", hasPermission: false },
-    { id: "16", name: "Sophia Hall", hasPermission: false },
-    { id: "17", name: "Ethan Allen", hasPermission: false },
-    { id: "18", name: "Grace Young", hasPermission: false },
-    { id: "19", name: "Benjamin King", hasPermission: false },
-    { id: "20", name: "Chloe Wright", hasPermission: false },
-  ]);
+  // Fetch only teachers
+  useEffect(() => {
+    const loadTeachers = async () => {
+      try {
+        const fetchedTeachers = await fetchTeachers();
+        setTeachers(fetchedTeachers);
+      } catch (err) {
+        console.error("Error loading teachers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTeachers();
+  }, []);
 
   const togglePermission = (id) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, hasPermission: !u.hasPermission } : u
+    setTeachers((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, hasPermission: !t.hasPermission } : t
       )
     );
   };
 
+  const handleAddGroup = async () => {
+    if (!titleText.trim()) {
+      Alert.alert("Error", "Please enter a group name.");
+      return;
+    }
+
+    try {
+      // 1. Add group to Firestore
+      const newGroupId = await addGroup(titleText.trim(), subCategoryId);
+
+      // 2. Add this group to selected teachers’ managedGroupIDs
+      const selectedTeachers = teachers.filter((t) => t.hasPermission);
+      for (const teacher of selectedTeachers) {
+        await addGroupToUser(teacher.email, newGroupId);
+      }
+
+      Alert.alert("Success", "Group added successfully!");
+      setTitleText("");
+    } catch (error) {
+      console.error("Error adding group:", error);
+      Alert.alert("Error", "Failed to add group.");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* App Bar Start */}
+      {/* App Bar */}
       <View style={styles.appBar}>
         <Text></Text>
         <Text style={styles.appBarText}>Add Group</Text>
         <Text></Text>
       </View>
-      {/* App Bar End */}
 
+      {/* Form */}
       <View style={styles.formContainer}>
         <Text style={styles.fieldTitle}>Title:</Text>
         <TextInput
@@ -75,35 +99,39 @@ function AddGroupScreen({ route }) {
           <Text style={styles.addAdminButtonText}>Manage Admins</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.submitButton}>
+        <TouchableOpacity style={styles.submitButton} onPress={handleAddGroup}>
           <Text style={styles.submitButtonText}>Add Group to {title}</Text>
         </TouchableOpacity>
       </View>
 
       <ReturnToGroupsButton />
 
-      {/* Modal for managing admins */}
+      {/* Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Manage Admin Permissions</Text>
+            <Text style={styles.modalTitle}>Manage Teacher Permissions</Text>
 
-            <FlatList
-              data={users}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.userRow}
-                  onPress={() => togglePermission(item.id)}
-                >
-                  <Text style={styles.userName}>{item.name}</Text>
-                  <Checkbox
-                    status={item.hasPermission ? "checked" : "unchecked"}
+            {loading ? (
+              <ActivityIndicator size="large" color={Colors.primary} />
+            ) : (
+              <FlatList
+                data={teachers}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.userRow}
                     onPress={() => togglePermission(item.id)}
-                  />
-                </TouchableOpacity>
-              )}
-            />
+                  >
+                    <Text style={styles.userName}>{item.email}</Text>
+                    <Checkbox
+                      status={item.hasPermission ? "checked" : "unchecked"}
+                      onPress={() => togglePermission(item.id)}
+                    />
+                  </TouchableOpacity>
+                )}
+              />
+            )}
 
             <TouchableOpacity
               style={styles.closeButton}
@@ -121,9 +149,7 @@ function AddGroupScreen({ route }) {
 export default AddGroupScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   appBar: {
     flexDirection: "row",
     justifyContent: "space-between",

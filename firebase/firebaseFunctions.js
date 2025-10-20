@@ -415,3 +415,297 @@ export const getNoticesForManagedGroups = async (userId) => {
     throw err;
   }
 };
+
+export async function addSubCategory(name, category) {
+  if (!name || !category) {
+    throw new Error("Both name and category are required.");
+  }
+
+  try {
+    const docRef = await addDoc(collection(db, "subCategories"), {
+      name: name,
+      category: category,
+    });
+    console.log("Sub-category added with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding sub-category:", error);
+    throw error;
+  }
+}
+
+export async function fetchTeachers() {
+  try {
+    const q = query(
+      collection(db, "users"),
+      where("userType", "==", "teacher")
+    );
+    const querySnapshot = await getDocs(q);
+
+    const teachers = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      teachers.push({
+        id: doc.id,
+        email: data.email || "Unknown",
+        hasPermission: false,
+      });
+    });
+
+    return teachers;
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    throw error;
+  }
+}
+
+/**
+ * Add a new group to Firestore.
+ * @param {string} name - Group name.
+ * @param {string} subCategoryId - The ID of the parent subcategory.
+ * @returns {Promise<string>} - The new group document ID.
+ */
+export async function addGroup(name, subCategoryId) {
+  if (!name || !subCategoryId)
+    throw new Error("Missing group name or subCategoryId.");
+
+  try {
+    const docRef = await addDoc(collection(db, "groups"), {
+      name: name,
+      subCategoryID: subCategoryId,
+    });
+    console.log("Group added with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding group:", error);
+    throw error;
+  }
+}
+
+/**
+ * Add a group ID to a user's managedGroupIDs array (using their email).
+ * @param {string} userEmail - The user's email.
+ * @param {string} groupId - The group ID to add.
+ */
+export async function addGroupToUser(userEmail, groupId) {
+  if (!userEmail || !groupId) throw new Error("Missing userEmail or groupId.");
+
+  try {
+    const usersRef = collection(db, "users");
+    const userQuery = query(usersRef, where("email", "==", userEmail));
+    const querySnapshot = await getDocs(userQuery);
+
+    if (querySnapshot.empty) {
+      console.error("No user found with email:", userEmail);
+      return;
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userDocRef = doc(db, "users", userDoc.id);
+
+    await updateDoc(userDocRef, {
+      managedGroupIDs: arrayUnion(groupId),
+    });
+
+    console.log(`Group ${groupId} added to user ${userEmail}`);
+  } catch (error) {
+    console.error("Error adding group to user:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes all groups linked to a specific subCategory.
+ * @param {string} subCategoryId - The ID of the subCategory to delete groups for.
+ */
+export async function deleteGroupsBySubCategory(subCategoryId) {
+  if (!subCategoryId) throw new Error("Missing subCategoryId.");
+
+  try {
+    const groupsRef = collection(db, "groups");
+    const q = query(groupsRef, where("subCategoryID", "==", subCategoryId));
+    const querySnapshot = await getDocs(q);
+
+    const deletePromises = querySnapshot.docs.map((docSnap) =>
+      deleteDoc(doc(db, "groups", docSnap.id))
+    );
+
+    await Promise.all(deletePromises);
+    console.log(
+      `Deleted ${querySnapshot.size} group(s) under subCategory ${subCategoryId}`
+    );
+  } catch (error) {
+    console.error("Error deleting groups:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a subCategory and all groups linked to it.
+ * @param {string} subCategoryId - The ID of the subCategory to delete.
+ */
+export async function deleteSubCategoryAndGroups(subCategoryId) {
+  if (!subCategoryId) throw new Error("Missing subCategoryId.");
+
+  try {
+    // 1. Delete all groups belonging to the subCategory
+    await deleteGroupsBySubCategory(subCategoryId);
+
+    // 2. Delete the subCategory document itself
+    await deleteDoc(doc(db, "subCategories", subCategoryId));
+
+    console.log(
+      `SubCategory ${subCategoryId} and its groups deleted successfully.`
+    );
+  } catch (error) {
+    console.error("Error deleting subCategory and groups:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the name of a subcategory in Firestore.
+ * @param {string} subCategoryId - The document ID of the subcategory.
+ * @param {string} newName - The new name for the subcategory.
+ */
+export async function updateSubCategoryName(subCategoryId, newName) {
+  if (!subCategoryId || !newName) {
+    throw new Error("Missing subCategoryId or newName.");
+  }
+
+  try {
+    const subCategoryRef = doc(db, "subCategories", subCategoryId);
+    await updateDoc(subCategoryRef, { name: newName });
+    console.log(
+      `Subcategory ${subCategoryId} updated successfully to "${newName}"`
+    );
+  } catch (error) {
+    console.error("Error updating subcategory name:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches all teachers and marks which have this group assigned in their managedGroupIDs.
+ * @param {string} groupId - The ID of the group.
+ * @returns {Promise<Array>} Array of teachers with { id, email, hasPermission }.
+ */
+export async function getTeachersWithGroupPermission(groupId) {
+  try {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("userType", "==", "teacher"));
+    const querySnapshot = await getDocs(q);
+
+    const users = querySnapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      const hasPermission =
+        Array.isArray(data.managedGroupIDs) &&
+        data.managedGroupIDs.includes(groupId);
+      return {
+        id: docSnap.id,
+        email: data.email || "Unknown",
+        hasPermission,
+      };
+    });
+
+    return users;
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the name of a group.
+ * @param {string} groupId - The document ID of the group.
+ * @param {string} newName - The new name for the group.
+ */
+export async function updateGroupName(groupId, newName) {
+  if (!groupId || !newName) throw new Error("Missing groupId or newName.");
+
+  try {
+    const groupRef = doc(db, "groups", groupId);
+    await updateDoc(groupRef, { name: newName });
+    console.log(`Group ${groupId} renamed to "${newName}"`);
+  } catch (error) {
+    console.error("Error updating group name:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates which users manage a group (adds/removes groupId in managedGroupIDs).
+ * @param {string} groupId - The group ID.
+ * @param {Array} updatedUsers - Array of user objects with { id, hasPermission }.
+ */
+export async function updateGroupAdmins(groupId, updatedUsers) {
+  try {
+    const updates = updatedUsers.map(async (user) => {
+      const userRef = doc(db, "users", user.id);
+      if (user.hasPermission) {
+        await updateDoc(userRef, {
+          managedGroupIDs: arrayUnion(groupId),
+        });
+      } else {
+        await updateDoc(userRef, {
+          managedGroupIDs: arrayRemove(groupId),
+        });
+      }
+    });
+
+    await Promise.all(updates);
+    console.log("Admin permissions updated for group:", groupId);
+  } catch (error) {
+    console.error("Error updating group admins:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a group and removes its ID from all users' managedGroupIDs and groupIDs arrays.
+ * @param {string} groupId - The ID of the group to delete.
+ */
+export async function deleteGroup(groupId) {
+  try {
+    if (!groupId) throw new Error("Group ID is required");
+
+    // Remove this groupId from all users’ arrays
+    const usersRef = collection(db, "users");
+    const usersSnap = await getDocs(usersRef);
+
+    const userUpdates = usersSnap.docs.map(async (userDoc) => {
+      const userRef = doc(db, "users", userDoc.id);
+      await updateDoc(userRef, {
+        managedGroupIDs: arrayRemove(groupId),
+        groupIDs: arrayRemove(groupId),
+      });
+    });
+
+    await Promise.all(userUpdates);
+
+    // Delete the group document itself
+    const groupRef = doc(db, "groups", groupId);
+    await deleteDoc(groupRef);
+
+    console.log(`Group ${groupId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a notice from Firestore by its ID.
+ * @param {string} noticeId - The document ID of the notice to delete.
+ */
+export async function deleteNotice(noticeId) {
+  try {
+    if (!noticeId) throw new Error("Notice ID is required");
+    const noticeRef = doc(db, "notices", noticeId);
+    await deleteDoc(noticeRef);
+    console.log(`Notice ${noticeId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting notice:", error);
+    throw error;
+  }
+}
