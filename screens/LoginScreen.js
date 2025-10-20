@@ -18,15 +18,15 @@ const LoginScreen = () => {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    // if (!email || !password) {
-    if (false) {
+    if (!email || !password) {
+      // if (false) {
       setError("Please enter both email and password.");
       return;
     }
 
     try {
-      // const user = await firebaseLogin(email, password);
-      const user = await firebaseLogin("alex47rivera@gmail.com", "Coffee123");
+      const user = await firebaseLogin(email, password);
+      // const user = await firebaseLogin("alex47rivera@gmail.com", "Coffee123");
       // const user = await firebaseLogin("frikkieviljoen@gmail.com", "Coffee123");
       // const user = await firebaseLogin("sebastian@gmail.com", "Coffee123");
       login(user.email);
