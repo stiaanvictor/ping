@@ -234,7 +234,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 15,
     padding: 10,
-    height: 400,
   },
   loadingText: {
     fontSize: 16,

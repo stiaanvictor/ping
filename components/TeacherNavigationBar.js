@@ -18,14 +18,6 @@ function TeacherNavigationBar() {
     }
   };
 
-  const navigateCalendar = () => {
-    if (currentRoute !== "Calendar") {
-      navigation.replace("Calendar");
-    } else {
-      console.log("Error navigating");
-    }
-  };
-
   const navigateGroups = () => {
     if (currentRoute !== "TeacherGroups") {
       navigation.replace("TeacherGroups");
@@ -51,23 +43,6 @@ function TeacherNavigationBar() {
           }
         >
           Dashboard
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.option} onPress={navigateCalendar}>
-        <Image
-          source={
-            currentRoute === "Calendar"
-              ? require("../assets/images/calendar-selected.png")
-              : require("../assets/images/calendar.png")
-          }
-          style={styles.icon}
-        />
-        <Text
-          style={
-            currentRoute === "Calendar" ? styles.textSelected : styles.text
-          }
-        >
-          Calendar
         </Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.option} onPress={navigateGroups}>
