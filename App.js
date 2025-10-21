@@ -74,7 +74,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
           <Stack.Screen name="ViewNotice" component={ViewNoticeScreen} />
           <Stack.Screen name="EditNotice" component={EditNoticeScreen} />
-          <Stack.Screen name="Calendar" component={CaledarScreen} />
+          <Stack.Screen name="Calendar" component={CalendarScreen} />
           <Stack.Screen
             name="GroupSelection"
             component={GroupSelectionScreen}
