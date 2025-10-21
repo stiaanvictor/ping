@@ -202,10 +202,20 @@ export const getGroupsBySubCategory = async (subCategoryId) => {
       return [];
     }
 
-    return snapshot.docs.map((doc) => ({
+    const groups = snapshot.docs.map((doc) => ({
       id: doc.id,
       name: doc.data().name || doc.id,
     }));
+
+    // Sort alphabetically and numerically (natural sort)
+    groups.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
+
+    return groups;
   } catch (error) {
     console.error("Error fetching groups by subcategory:", error);
     return [];
