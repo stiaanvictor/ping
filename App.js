@@ -8,7 +8,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import LoginScreen from "./screens/LoginScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import ViewNoticeScreen from "./screens/ViewNoticeScreen";
-import CaledarScreen from "./screens/CalendarScreen";
+import CalendarScreen from "./screens/CalendarScreen";
 import GroupSelectionScreen from "./screens/GroupSelectionScreen";
 import EditNoticeScreen from "./screens/EditNoticeScreen";
 import TeacherGroupsScreen from "./screens/TeacherGroupsScreen";
