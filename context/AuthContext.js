@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { firebaseSignup } from "../firebase/firebaseFunctions"; // ✅ add this
 
 export const AuthContext = createContext();
 
@@ -10,7 +11,6 @@ export const AuthProvider = ({ children }) => {
     isLoggedIn: false,
     userId: null,
     userType: "",
-    sysAdmin: false,
     name: "",
   });
 
@@ -20,13 +20,12 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         const name = firebaseUser.email.split("@")[0];
 
-        // Fetch user info from Firestore
         try {
           const usersRef = collection(db, "users");
           const q = query(usersRef, where("email", "==", firebaseUser.email));
           const querySnapshot = await getDocs(q);
 
-          let userType = "teacher"; // fallback
+          let userType = "teacher";
           let userId;
           if (!querySnapshot.empty) {
             const userSnap = querySnapshot.docs[0];
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }) => {
             isLoggedIn: true,
             userId: userId,
             userType,
-            sysAdmin: false,
             name,
           });
         } catch (error) {
@@ -50,7 +48,6 @@ export const AuthProvider = ({ children }) => {
           isLoggedIn: false,
           userId: null,
           userType: "",
-          sysAdmin: false,
           name: "",
         });
       }
@@ -58,6 +55,24 @@ export const AuthProvider = ({ children }) => {
 
     return unsubscribe;
   }, []);
+
+  // ✅ Signup new user
+  const signup = async (email, password) => {
+    try {
+      const newUser = await firebaseSignup(email, password);
+      const name = email.split("@")[0];
+      setUser({
+        isLoggedIn: true,
+        userId: newUser.uid,
+        email,
+        userType: "student",
+        name,
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      throw error;
+    }
+  };
 
   // Manual login (optional)
   const login = async (email) => {
@@ -82,36 +97,32 @@ export const AuthProvider = ({ children }) => {
         userId: userId,
         email,
         userType,
-        sysAdmin: false,
         name,
       });
     } catch (error) {
       console.error("Error fetching user data:", error);
       setUser({
         isLoggedIn: true,
-        userId: id,
         email,
-        userType: "teacher",
-        sysAdmin: false,
+        userType: "student",
         name,
       });
     }
   };
 
-  // Proper Firebase logout
+  // ✅ Logout
   const logout = async () => {
     await signOut(auth);
     setUser({
       isLoggedIn: false,
       userId: null,
       userType: "",
-      sysAdmin: false,
       name: "",
     });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,10 @@
 import { auth } from "./firebaseConfig";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 import { db } from "./firebaseConfig";
 import {
   collection,
@@ -13,6 +18,7 @@ import {
   arrayRemove,
   addDoc,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 
 // 🔐 Login
@@ -25,55 +31,105 @@ export const firebaseLogin = async (email, password) => {
   return userCredential.user;
 };
 
+export const firebaseSignup = async (email, password) => {
+  const auth = getAuth();
+
+  // 1️⃣ Create Firebase Auth user
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+  const user = userCredential.user;
+
+  // 2️⃣ Create Firestore user doc
+  const userRef = doc(db, "users", user.uid);
+  await setDoc(userRef, {
+    email: email,
+    userType: "student",
+    groupIDs: [],
+  });
+
+  // 3️⃣ Wait until the user doc is actually written
+  let attempts = 0;
+  while (attempts < 5) {
+    // ~5 attempts max
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) break;
+    await new Promise((resolve) => setTimeout(resolve, 500)); // wait 0.5 sec
+    attempts++;
+  }
+
+  return user;
+};
+
+export const firebaseResetPassword = async (email) => {
+  const auth = getAuth();
+  await sendPasswordResetEmail(auth, email);
+};
+
 // 📰 Get notices belonging to the user's subscribed groups (server-side filtering)
 export const getUserNotices = async (userEmail) => {
   try {
-    // 1) Find the user by email
+    // 1️⃣ Find user by email
     const usersRef = collection(db, "users");
     const qUser = query(usersRef, where("email", "==", userEmail));
     const userSnap = await getDocs(qUser);
 
+    // ✅ If no user doc yet (likely just signed up), stop early
     if (userSnap.empty) {
-      console.warn("User not found:", userEmail);
+      console.log("User doc not found yet. Probably just signed up.");
       return [];
     }
 
     const userDoc = userSnap.docs[0];
-    const { groupIDs = [] } = userDoc.data();
+    const data = userDoc.data();
 
-    if (!Array.isArray(groupIDs) || groupIDs.length === 0) {
-      console.log("User is not subscribed to any groups.");
+    // ✅ Stop if groupIDs missing or empty
+    if (!data || !Array.isArray(data.groupIDs) || data.groupIDs.length === 0) {
+      console.log("User has no valid groupIDs yet — skipping notices fetch.");
       return [];
     }
 
-    // 2) Normalize to string IDs (support both string and DocumentReference)
-    const normalizedIds = groupIDs
+    // 2️⃣ Normalize IDs
+    const normalizedIds = data.groupIDs
       .map((g) => {
         if (typeof g === "string") return g;
-        if (g?.id) return g.id; // DocumentReference.id
-        if (g?.path) return g.path.split("/").pop(); // fallback if path is present
+        if (g?.id) return g.id;
+        if (g?.path) return g.path.split("/").pop();
         return null;
       })
       .filter(Boolean);
 
     if (normalizedIds.length === 0) return [];
 
-    // 3) Firestore 'in' accepts up to 10 values -> chunk
+    // 3️⃣ Chunk for Firestore 'in' query
     const chunks = [];
     for (let i = 0; i < normalizedIds.length; i += 10) {
       chunks.push(normalizedIds.slice(i, i + 10));
     }
 
-    // 4) Query notices server-side for each chunk
     const all = [];
-    for (const chunk of chunks) {
-      const noticesRef = collection(db, "notices");
-      const q = query(noticesRef, where("groupID", "in", chunk));
-      const snap = await getDocs(q);
-      snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+
+    // ✅ Wrap in try/catch to silence harmless “invalid data” race errors
+    try {
+      for (const chunk of chunks) {
+        if (!chunk || chunk.length === 0) continue;
+        const noticesRef = collection(db, "notices");
+        const q = query(noticesRef, where("groupID", "in", chunk));
+        const snap = await getDocs(q);
+        snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+      }
+    } catch (err) {
+      if (err.message.includes("Function where() called with invalid data")) {
+        console.log("Skipped invalid query — user doc not ready yet.");
+        return [];
+      } else {
+        throw err;
+      }
     }
 
-    // 5) (Optional) sort newest first by noticeSentDate, then eventDate
+    // 4️⃣ Sort newest first
     all.sort((a, b) => {
       const toSec = (v) =>
         v?.seconds ??
@@ -709,3 +765,49 @@ export async function deleteNotice(noticeId) {
     throw error;
   }
 }
+
+// 🔹 Get all users from Firestore
+export const getAllUsers = async () => {
+  try {
+    const usersRef = collection(db, "users");
+    const snapshot = await getDocs(usersRef);
+    const users = [];
+    snapshot.forEach((docSnap) => {
+      users.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    return users;
+  } catch (error) {
+    console.error("Error getting all users:", error);
+    return [];
+  }
+};
+
+export const updateUserType = async (userId, newType) => {
+  try {
+    const userRef = doc(db, "users", userId);
+
+    // Get current user data
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      console.error(`User ${userId} not found.`);
+      return;
+    }
+
+    // Base update data
+    const updateData = { userType: newType };
+
+    // If user becomes a teacher, ensure managedGroupIDs array exists
+    if (newType === "teacher") {
+      const userData = userSnap.data();
+      if (!Array.isArray(userData.managedGroupIDs)) {
+        updateData.managedGroupIDs = [];
+      }
+    }
+
+    await updateDoc(userRef, updateData);
+    console.log(`✅ Updated user ${userId} to ${newType}`);
+  } catch (error) {
+    console.error("Error updating user type:", error);
+    throw error;
+  }
+};

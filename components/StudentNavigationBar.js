@@ -1,49 +1,45 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useNavigationState } from "@react-navigation/native";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 
 function StudentNavigationBar() {
   const navigation = useNavigation();
+  const { user } = useContext(AuthContext);
 
   const routes = useNavigationState((state) => state.routes);
   const index = useNavigationState((state) => state.index);
-
   const currentRoute = routes[index].name;
 
   const navigateDashboard = () => {
-    if (currentRoute !== "Dashboard") {
-      navigation.replace("Dashboard");
-    } else {
-      console.log("Error navigating");
-    }
+    if (currentRoute !== "Dashboard") navigation.replace("Dashboard");
   };
 
   const navigateCalendar = () => {
-    if (currentRoute !== "Calendar") {
-      navigation.replace("Calendar");
-    } else {
-      console.log("Error navigating");
-    }
+    if (currentRoute !== "Calendar") navigation.replace("Calendar");
   };
 
   const navigateGroups = () => {
-    if (currentRoute !== "GroupSelection") {
-      navigation.replace("GroupSelection");
-    } else {
-      console.log("Error navigating");
-    }
+    if (currentRoute !== "GroupSelection") navigation.replace("GroupSelection");
   };
+
+  const navigateManageUsers = () => {
+    if (currentRoute !== "ManageUsers") navigation.replace("ManageUsers");
+  };
+
+  // Helper for color highlight
+  const activeColor = "#1E88E5";
+  const inactiveColor = "#000";
 
   return (
     <View style={styles.container}>
+      {/* Dashboard */}
       <TouchableOpacity style={styles.option} onPress={navigateDashboard}>
-        <Image
-          source={
-            currentRoute === "Dashboard"
-              ? require("../assets/images/home-selected.png")
-              : require("../assets/images/home.png")
-          }
-          style={styles.icon}
+        <Ionicons
+          name={currentRoute === "Dashboard" ? "home" : "home-outline"}
+          size={28}
+          color={currentRoute === "Dashboard" ? activeColor : inactiveColor}
         />
         <Text
           style={
@@ -53,14 +49,13 @@ function StudentNavigationBar() {
           Dashboard
         </Text>
       </TouchableOpacity>
+
+      {/* Calendar */}
       <TouchableOpacity style={styles.option} onPress={navigateCalendar}>
-        <Image
-          source={
-            currentRoute === "Calendar"
-              ? require("../assets/images/calendar-selected.png")
-              : require("../assets/images/calendar.png")
-          }
-          style={styles.icon}
+        <Ionicons
+          name={currentRoute === "Calendar" ? "calendar" : "calendar-outline"}
+          size={28}
+          color={currentRoute === "Calendar" ? activeColor : inactiveColor}
         />
         <Text
           style={
@@ -70,14 +65,15 @@ function StudentNavigationBar() {
           Calendar
         </Text>
       </TouchableOpacity>
+
+      {/* Groups */}
       <TouchableOpacity style={styles.option} onPress={navigateGroups}>
-        <Image
-          source={
-            currentRoute === "GroupSelection"
-              ? require("../assets/images/menu-selected.png")
-              : require("../assets/images/menu.png")
+        <Ionicons
+          name={currentRoute === "GroupSelection" ? "people" : "people-outline"}
+          size={28}
+          color={
+            currentRoute === "GroupSelection" ? activeColor : inactiveColor
           }
-          style={styles.icon}
         />
         <Text
           style={
@@ -89,6 +85,26 @@ function StudentNavigationBar() {
           Groups
         </Text>
       </TouchableOpacity>
+
+      {/* ✅ Admin-only: Managed Users */}
+      {user?.userType === "admin" && (
+        <TouchableOpacity style={styles.option} onPress={navigateManageUsers}>
+          <Ionicons
+            name={
+              currentRoute === "ManageUsers" ? "settings" : "settings-outline"
+            }
+            size={28}
+            color={currentRoute === "ManageUsers" ? activeColor : inactiveColor}
+          />
+          <Text
+            style={
+              currentRoute === "ManageUsers" ? styles.textSelected : styles.text
+            }
+          >
+            Users
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -114,13 +130,10 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
   },
-  icon: {
-    width: 30,
-    height: 30,
-  },
   text: {
     fontFamily: "Inter-Light",
     marginTop: -5,
+    color: "#000",
   },
   textSelected: {
     fontFamily: "Inter-Light",

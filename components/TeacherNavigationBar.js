@@ -1,6 +1,6 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useNavigationState } from "@react-navigation/native";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 function TeacherNavigationBar() {
   const navigation = useNavigation();
@@ -26,16 +26,16 @@ function TeacherNavigationBar() {
     }
   };
 
+  const activeColor = "#1E88E5";
+  const inactiveColor = "#000";
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.option} onPress={navigateDashboard}>
-        <Image
-          source={
-            currentRoute === "Dashboard"
-              ? require("../assets/images/home-selected.png")
-              : require("../assets/images/home.png")
-          }
-          style={styles.icon}
+        <Ionicons
+          name={currentRoute === "Dashboard" ? "home" : "home-outline"}
+          size={28}
+          color={currentRoute === "Dashboard" ? activeColor : inactiveColor}
         />
         <Text
           style={
@@ -45,14 +45,12 @@ function TeacherNavigationBar() {
           Dashboard
         </Text>
       </TouchableOpacity>
+
       <TouchableOpacity style={styles.option} onPress={navigateGroups}>
-        <Image
-          source={
-            currentRoute === "TeacherGroups"
-              ? require("../assets/images/menu-selected.png")
-              : require("../assets/images/menu.png")
-          }
-          style={styles.icon}
+        <Ionicons
+          name={currentRoute === "TeacherGroups" ? "people" : "people-outline"}
+          size={28}
+          color={currentRoute === "TeacherGroups" ? activeColor : inactiveColor}
         />
         <Text
           style={
@@ -87,13 +85,10 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
   },
-  icon: {
-    width: 30,
-    height: 30,
-  },
   text: {
     fontFamily: "Inter-Light",
     marginTop: -5,
+    color: "#000",
   },
   textSelected: {
     fontFamily: "Inter-Light",

@@ -119,7 +119,7 @@ function TeacherDashboardScreen() {
         ListHeaderComponent={
           <>
             <Text style={styles.greeting}>
-              Logged In As: {user?.name || "Teacher"}
+              Welcome {user?.name || "Teacher"}!
             </Text>
 
             {/* Categories */}
