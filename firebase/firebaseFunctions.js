@@ -1,5 +1,10 @@
 import { auth } from "./firebaseConfig";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 import { db } from "./firebaseConfig";
 import {
   collection,
@@ -13,6 +18,7 @@ import {
   arrayRemove,
   addDoc,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 
 // 🔐 Login
@@ -25,55 +31,105 @@ export const firebaseLogin = async (email, password) => {
   return userCredential.user;
 };
 
+export const firebaseSignup = async (email, password) => {
+  const auth = getAuth();
+
+  // 1️⃣ Create Firebase Auth user
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+  const user = userCredential.user;
+
+  // 2️⃣ Create Firestore user doc
+  const userRef = doc(db, "users", user.uid);
+  await setDoc(userRef, {
+    email: email,
+    userType: "student",
+    groupIDs: [],
+  });
+
+  // 3️⃣ Wait until the user doc is actually written
+  let attempts = 0;
+  while (attempts < 5) {
+    // ~5 attempts max
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) break;
+    await new Promise((resolve) => setTimeout(resolve, 500)); // wait 0.5 sec
+    attempts++;
+  }
+
+  return user;
+};
+
+export const firebaseResetPassword = async (email) => {
+  const auth = getAuth();
+  await sendPasswordResetEmail(auth, email);
+};
+
 // 📰 Get notices belonging to the user's subscribed groups (server-side filtering)
 export const getUserNotices = async (userEmail) => {
   try {
-    // 1) Find the user by email
+    // 1️⃣ Find user by email
     const usersRef = collection(db, "users");
     const qUser = query(usersRef, where("email", "==", userEmail));
     const userSnap = await getDocs(qUser);
 
+    // ✅ If no user doc yet (likely just signed up), stop early
     if (userSnap.empty) {
-      console.warn("User not found:", userEmail);
+      console.log("User doc not found yet. Probably just signed up.");
       return [];
     }
 
     const userDoc = userSnap.docs[0];
-    const { groupIDs = [] } = userDoc.data();
+    const data = userDoc.data();
 
-    if (!Array.isArray(groupIDs) || groupIDs.length === 0) {
-      console.log("User is not subscribed to any groups.");
+    // ✅ Stop if groupIDs missing or empty
+    if (!data || !Array.isArray(data.groupIDs) || data.groupIDs.length === 0) {
+      console.log("User has no valid groupIDs yet — skipping notices fetch.");
       return [];
     }
 
-    // 2) Normalize to string IDs (support both string and DocumentReference)
-    const normalizedIds = groupIDs
+    // 2️⃣ Normalize IDs
+    const normalizedIds = data.groupIDs
       .map((g) => {
         if (typeof g === "string") return g;
-        if (g?.id) return g.id; // DocumentReference.id
-        if (g?.path) return g.path.split("/").pop(); // fallback if path is present
+        if (g?.id) return g.id;
+        if (g?.path) return g.path.split("/").pop();
         return null;
       })
       .filter(Boolean);
 
     if (normalizedIds.length === 0) return [];
 
-    // 3) Firestore 'in' accepts up to 10 values -> chunk
+    // 3️⃣ Chunk for Firestore 'in' query
     const chunks = [];
     for (let i = 0; i < normalizedIds.length; i += 10) {
       chunks.push(normalizedIds.slice(i, i + 10));
     }
 
-    // 4) Query notices server-side for each chunk
     const all = [];
-    for (const chunk of chunks) {
-      const noticesRef = collection(db, "notices");
-      const q = query(noticesRef, where("groupID", "in", chunk));
-      const snap = await getDocs(q);
-      snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+
+    // ✅ Wrap in try/catch to silence harmless “invalid data” race errors
+    try {
+      for (const chunk of chunks) {
+        if (!chunk || chunk.length === 0) continue;
+        const noticesRef = collection(db, "notices");
+        const q = query(noticesRef, where("groupID", "in", chunk));
+        const snap = await getDocs(q);
+        snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+      }
+    } catch (err) {
+      if (err.message.includes("Function where() called with invalid data")) {
+        console.log("Skipped invalid query — user doc not ready yet.");
+        return [];
+      } else {
+        throw err;
+      }
     }
 
-    // 5) (Optional) sort newest first by noticeSentDate, then eventDate
+    // 4️⃣ Sort newest first
     all.sort((a, b) => {
       const toSec = (v) =>
         v?.seconds ??
@@ -146,10 +202,20 @@ export const getGroupsBySubCategory = async (subCategoryId) => {
       return [];
     }
 
-    return snapshot.docs.map((doc) => ({
+    const groups = snapshot.docs.map((doc) => ({
       id: doc.id,
       name: doc.data().name || doc.id,
     }));
+
+    // Sort alphabetically and numerically (natural sort)
+    groups.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
+
+    return groups;
   } catch (error) {
     console.error("Error fetching groups by subcategory:", error);
     return [];
@@ -413,5 +479,345 @@ export const getNoticesForManagedGroups = async (userId) => {
   } catch (err) {
     console.error("Error in getNoticesForManagedGroups:", err);
     throw err;
+  }
+};
+
+export async function addSubCategory(name, category) {
+  if (!name || !category) {
+    throw new Error("Both name and category are required.");
+  }
+
+  try {
+    const docRef = await addDoc(collection(db, "subCategories"), {
+      name: name,
+      category: category,
+    });
+    console.log("Sub-category added with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding sub-category:", error);
+    throw error;
+  }
+}
+
+export async function fetchTeachers() {
+  try {
+    const q = query(
+      collection(db, "users"),
+      where("userType", "==", "teacher")
+    );
+    const querySnapshot = await getDocs(q);
+
+    const teachers = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      teachers.push({
+        id: doc.id,
+        email: data.email || "Unknown",
+        hasPermission: false,
+      });
+    });
+
+    return teachers;
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    throw error;
+  }
+}
+
+/**
+ * Add a new group to Firestore.
+ * @param {string} name - Group name.
+ * @param {string} subCategoryId - The ID of the parent subcategory.
+ * @returns {Promise<string>} - The new group document ID.
+ */
+export async function addGroup(name, subCategoryId) {
+  if (!name || !subCategoryId)
+    throw new Error("Missing group name or subCategoryId.");
+
+  try {
+    const docRef = await addDoc(collection(db, "groups"), {
+      name: name,
+      subCategoryID: subCategoryId,
+    });
+    console.log("Group added with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding group:", error);
+    throw error;
+  }
+}
+
+/**
+ * Add a group ID to a user's managedGroupIDs array (using their email).
+ * @param {string} userEmail - The user's email.
+ * @param {string} groupId - The group ID to add.
+ */
+export async function addGroupToUser(userEmail, groupId) {
+  if (!userEmail || !groupId) throw new Error("Missing userEmail or groupId.");
+
+  try {
+    const usersRef = collection(db, "users");
+    const userQuery = query(usersRef, where("email", "==", userEmail));
+    const querySnapshot = await getDocs(userQuery);
+
+    if (querySnapshot.empty) {
+      console.error("No user found with email:", userEmail);
+      return;
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userDocRef = doc(db, "users", userDoc.id);
+
+    await updateDoc(userDocRef, {
+      managedGroupIDs: arrayUnion(groupId),
+    });
+
+    console.log(`Group ${groupId} added to user ${userEmail}`);
+  } catch (error) {
+    console.error("Error adding group to user:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes all groups linked to a specific subCategory.
+ * @param {string} subCategoryId - The ID of the subCategory to delete groups for.
+ */
+export async function deleteGroupsBySubCategory(subCategoryId) {
+  if (!subCategoryId) throw new Error("Missing subCategoryId.");
+
+  try {
+    const groupsRef = collection(db, "groups");
+    const q = query(groupsRef, where("subCategoryID", "==", subCategoryId));
+    const querySnapshot = await getDocs(q);
+
+    const deletePromises = querySnapshot.docs.map((docSnap) =>
+      deleteDoc(doc(db, "groups", docSnap.id))
+    );
+
+    await Promise.all(deletePromises);
+    console.log(
+      `Deleted ${querySnapshot.size} group(s) under subCategory ${subCategoryId}`
+    );
+  } catch (error) {
+    console.error("Error deleting groups:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a subCategory and all groups linked to it.
+ * @param {string} subCategoryId - The ID of the subCategory to delete.
+ */
+export async function deleteSubCategoryAndGroups(subCategoryId) {
+  if (!subCategoryId) throw new Error("Missing subCategoryId.");
+
+  try {
+    // 1. Delete all groups belonging to the subCategory
+    await deleteGroupsBySubCategory(subCategoryId);
+
+    // 2. Delete the subCategory document itself
+    await deleteDoc(doc(db, "subCategories", subCategoryId));
+
+    console.log(
+      `SubCategory ${subCategoryId} and its groups deleted successfully.`
+    );
+  } catch (error) {
+    console.error("Error deleting subCategory and groups:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the name of a subcategory in Firestore.
+ * @param {string} subCategoryId - The document ID of the subcategory.
+ * @param {string} newName - The new name for the subcategory.
+ */
+export async function updateSubCategoryName(subCategoryId, newName) {
+  if (!subCategoryId || !newName) {
+    throw new Error("Missing subCategoryId or newName.");
+  }
+
+  try {
+    const subCategoryRef = doc(db, "subCategories", subCategoryId);
+    await updateDoc(subCategoryRef, { name: newName });
+    console.log(
+      `Subcategory ${subCategoryId} updated successfully to "${newName}"`
+    );
+  } catch (error) {
+    console.error("Error updating subcategory name:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches all teachers and marks which have this group assigned in their managedGroupIDs.
+ * @param {string} groupId - The ID of the group.
+ * @returns {Promise<Array>} Array of teachers with { id, email, hasPermission }.
+ */
+export async function getTeachersWithGroupPermission(groupId) {
+  try {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("userType", "==", "teacher"));
+    const querySnapshot = await getDocs(q);
+
+    const users = querySnapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      const hasPermission =
+        Array.isArray(data.managedGroupIDs) &&
+        data.managedGroupIDs.includes(groupId);
+      return {
+        id: docSnap.id,
+        email: data.email || "Unknown",
+        hasPermission,
+      };
+    });
+
+    return users;
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the name of a group.
+ * @param {string} groupId - The document ID of the group.
+ * @param {string} newName - The new name for the group.
+ */
+export async function updateGroupName(groupId, newName) {
+  if (!groupId || !newName) throw new Error("Missing groupId or newName.");
+
+  try {
+    const groupRef = doc(db, "groups", groupId);
+    await updateDoc(groupRef, { name: newName });
+    console.log(`Group ${groupId} renamed to "${newName}"`);
+  } catch (error) {
+    console.error("Error updating group name:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates which users manage a group (adds/removes groupId in managedGroupIDs).
+ * @param {string} groupId - The group ID.
+ * @param {Array} updatedUsers - Array of user objects with { id, hasPermission }.
+ */
+export async function updateGroupAdmins(groupId, updatedUsers) {
+  try {
+    const updates = updatedUsers.map(async (user) => {
+      const userRef = doc(db, "users", user.id);
+      if (user.hasPermission) {
+        await updateDoc(userRef, {
+          managedGroupIDs: arrayUnion(groupId),
+        });
+      } else {
+        await updateDoc(userRef, {
+          managedGroupIDs: arrayRemove(groupId),
+        });
+      }
+    });
+
+    await Promise.all(updates);
+    console.log("Admin permissions updated for group:", groupId);
+  } catch (error) {
+    console.error("Error updating group admins:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a group and removes its ID from all users' managedGroupIDs and groupIDs arrays.
+ * @param {string} groupId - The ID of the group to delete.
+ */
+export async function deleteGroup(groupId) {
+  try {
+    if (!groupId) throw new Error("Group ID is required");
+
+    // Remove this groupId from all users’ arrays
+    const usersRef = collection(db, "users");
+    const usersSnap = await getDocs(usersRef);
+
+    const userUpdates = usersSnap.docs.map(async (userDoc) => {
+      const userRef = doc(db, "users", userDoc.id);
+      await updateDoc(userRef, {
+        managedGroupIDs: arrayRemove(groupId),
+        groupIDs: arrayRemove(groupId),
+      });
+    });
+
+    await Promise.all(userUpdates);
+
+    // Delete the group document itself
+    const groupRef = doc(db, "groups", groupId);
+    await deleteDoc(groupRef);
+
+    console.log(`Group ${groupId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a notice from Firestore by its ID.
+ * @param {string} noticeId - The document ID of the notice to delete.
+ */
+export async function deleteNotice(noticeId) {
+  try {
+    if (!noticeId) throw new Error("Notice ID is required");
+    const noticeRef = doc(db, "notices", noticeId);
+    await deleteDoc(noticeRef);
+    console.log(`Notice ${noticeId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting notice:", error);
+    throw error;
+  }
+}
+
+// 🔹 Get all users from Firestore
+export const getAllUsers = async () => {
+  try {
+    const usersRef = collection(db, "users");
+    const snapshot = await getDocs(usersRef);
+    const users = [];
+    snapshot.forEach((docSnap) => {
+      users.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    return users;
+  } catch (error) {
+    console.error("Error getting all users:", error);
+    return [];
+  }
+};
+
+export const updateUserType = async (userId, newType) => {
+  try {
+    const userRef = doc(db, "users", userId);
+
+    // Get current user data
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      console.error(`User ${userId} not found.`);
+      return;
+    }
+
+    // Base update data
+    const updateData = { userType: newType };
+
+    // If user becomes a teacher, ensure managedGroupIDs array exists
+    if (newType === "teacher") {
+      const userData = userSnap.data();
+      if (!Array.isArray(userData.managedGroupIDs)) {
+        updateData.managedGroupIDs = [];
+      }
+    }
+
+    await updateDoc(userRef, updateData);
+    console.log(`✅ Updated user ${userId} to ${newType}`);
+  } catch (error) {
+    console.error("Error updating user type:", error);
+    throw error;
   }
 };

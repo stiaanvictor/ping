@@ -4,20 +4,37 @@ import {
   View,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import Colors from "../constants/colors";
 import ReturnToGroupsButton from "../components/ReturnToGroupsButton";
+import { updateSubCategoryName } from "../firebase/firebaseFunctions";
 
 function EditCategoryScreen({ route }) {
-  const { group } = route.params; // expects { group: { title: '...' } }
+  const { group } = route.params; // expects { group: { title: '...' }, subCategoryId }
 
   const [titleText, setTitleText] = useState(group?.title || "");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    // your save logic here
-    console.log("Saved changes to category:", titleText);
+  const handleSave = async () => {
+    if (!titleText.trim()) {
+      Alert.alert("Error", "Please enter a valid title.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await updateSubCategoryName(group.subCategoryId, titleText.trim());
+      Alert.alert("Success", "Category updated successfully!");
+      console.log("Saved changes to category:", titleText);
+    } catch (error) {
+      console.error("Failed to update category:", error);
+      Alert.alert("Error", "Failed to save changes.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -37,10 +54,17 @@ function EditCategoryScreen({ route }) {
           value={titleText}
           onChangeText={setTitleText}
           style={styles.input}
+          editable={!saving}
         />
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
-          <Text style={styles.submitButtonText}>Save Changes</Text>
+        <TouchableOpacity
+          style={[styles.submitButton, saving && { opacity: 0.6 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Text style={styles.submitButtonText}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Text>
         </TouchableOpacity>
       </View>
 

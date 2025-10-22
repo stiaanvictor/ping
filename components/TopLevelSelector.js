@@ -25,7 +25,7 @@ const TopLevelSelector = ({ title, children }) => {
       >
         <Text style={styles.title}>{title}</Text>
 
-        {user.sysAdmin ? (
+        {user.userType == "admin" ? (
           <TouchableOpacity onPress={addPressed}>
             <AntDesign name="plus-circle" size={24} color="white" />
           </TouchableOpacity>

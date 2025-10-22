@@ -32,6 +32,17 @@ function StudentNoticeCard({
     });
   };
 
+  // Format date as "day monthName year"
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <TouchableOpacity onPress={handlePress}>
       <View style={styles.container}>
@@ -41,9 +52,7 @@ function StudentNoticeCard({
         <View style={styles.middle}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{subHeading}</Text>
-        </View>
-        <View style={styles.right}>
-          <Text style={styles.date}>{eventDate}</Text>
+          <Text style={styles.date}>{formatDate(eventDate)}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -81,7 +90,16 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Regular",
     fontSize: 26,
   },
-  description: { color: "white", fontSize: 16, fontFamily: "Inter-Light" },
-  right: {},
-  date: { color: "white", position: "absolute", bottom: -10, right: 5 },
+  description: {
+    color: "white",
+    fontSize: 16,
+    fontFamily: "Inter-Light",
+    marginTop: 4,
+  },
+  date: {
+    color: "white",
+    fontSize: 14,
+    fontFamily: "Inter-Light",
+    marginTop: 6,
+  },
 });

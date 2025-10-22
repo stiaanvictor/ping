@@ -6,43 +6,40 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Colors from "../constants/colors";
 import { Checkbox } from "react-native-paper";
 import ReturnToGroupsButton from "../components/ReturnToGroupsButton";
+import {
+  getTeachersWithGroupPermission,
+  updateGroupName,
+  updateGroupAdmins,
+} from "../firebase/firebaseFunctions";
 
 function EditGroupScreen({ route }) {
-  const { group } = route.params; // expects { group: { title: '...', admins: [...] } }
+  const { group } = route.params; // expects { group: { id, title, subCategoryId } }
 
   const [titleText, setTitleText] = useState(group?.title || "");
   const [modalVisible, setModalVisible] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [saving, setSaving] = useState(false);
 
-  const [users, setUsers] = useState(
-    group?.admins || [
-      { id: "1", name: "John Smith", hasPermission: true },
-      { id: "2", name: "Mary Jones", hasPermission: false },
-      { id: "3", name: "Alex Brown", hasPermission: true },
-      { id: "4", name: "Sarah Johnson", hasPermission: false },
-      { id: "5", name: "Michael Davis", hasPermission: false },
-      { id: "6", name: "Emily Wilson", hasPermission: false },
-      { id: "7", name: "David Anderson", hasPermission: true },
-      { id: "8", name: "Jessica Martinez", hasPermission: false },
-      { id: "9", name: "Chris Taylor", hasPermission: false },
-      { id: "10", name: "Amanda Thomas", hasPermission: false },
-      { id: "11", name: "Daniel White", hasPermission: false },
-      { id: "12", name: "Laura Harris", hasPermission: false },
-      { id: "13", name: "Matthew Clark", hasPermission: false },
-      { id: "14", name: "Olivia Lewis", hasPermission: false },
-      { id: "15", name: "James Walker", hasPermission: false },
-      { id: "16", name: "Sophia Hall", hasPermission: true },
-      { id: "17", name: "Ethan Allen", hasPermission: false },
-      { id: "18", name: "Grace Young", hasPermission: false },
-      { id: "19", name: "Benjamin King", hasPermission: true },
-      { id: "20", name: "Chloe Wright", hasPermission: false },
-    ]
-  );
+  // Fetch teachers and mark which ones have permission
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const fetchedUsers = await getTeachersWithGroupPermission(group.id);
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error("Error loading teachers:", error);
+        Alert.alert("Error", "Failed to load teachers.");
+      }
+    };
+    loadUsers();
+  }, [group.id]);
 
   const togglePermission = (id) => {
     setUsers((prev) =>
@@ -52,9 +49,24 @@ function EditGroupScreen({ route }) {
     );
   };
 
-  const handleSave = () => {
-    // your save logic here
-    console.log("Saved group changes:", { titleText, users });
+  const handleSave = async () => {
+    if (!titleText.trim()) {
+      Alert.alert("Error", "Please enter a valid group name.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await updateGroupName(group.id, titleText.trim());
+      await updateGroupAdmins(group.id, users);
+      Alert.alert("Success", "Group updated successfully!");
+      console.log("Saved group changes:", { titleText, users });
+    } catch (error) {
+      console.error("Failed to update group:", error);
+      Alert.alert("Error", "Failed to save changes.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -69,22 +81,30 @@ function EditGroupScreen({ route }) {
       <View style={styles.formContainer}>
         <Text style={styles.editingTitle}>Editing {group?.title}</Text>
 
-        <Text style={styles.fieldTitle}>Title:</Text>
+        <Text style={styles.fieldTitle}>Group Name:</Text>
         <TextInput
           value={titleText}
           onChangeText={setTitleText}
           style={styles.input}
+          editable={!saving}
         />
 
         <TouchableOpacity
           style={styles.addAdminButton}
           onPress={() => setModalVisible(true)}
+          disabled={saving}
         >
           <Text style={styles.addAdminButtonText}>Manage Admins</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
-          <Text style={styles.submitButtonText}>Save Changes</Text>
+        <TouchableOpacity
+          style={[styles.submitButton, saving && { opacity: 0.6 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Text style={styles.submitButtonText}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -104,7 +124,7 @@ function EditGroupScreen({ route }) {
                   style={styles.userRow}
                   onPress={() => togglePermission(item.id)}
                 >
-                  <Text style={styles.userName}>{item.name}</Text>
+                  <Text style={styles.userName}>{item.email}</Text>
                   <Checkbox
                     status={item.hasPermission ? "checked" : "unchecked"}
                     onPress={() => togglePermission(item.id)}

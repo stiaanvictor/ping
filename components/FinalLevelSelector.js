@@ -7,6 +7,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Alert,
 } from "react-native";
 import Colors from "../constants/colors";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -15,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import {
   subscribeToGroup,
   unsubscribeFromGroup,
+  deleteGroup,
 } from "../firebase/firebaseFunctions";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
@@ -26,29 +28,27 @@ const FinalLevelSelector = ({ title, groupId }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
 
-  const userEmail = auth.currentUser?.email; // <-- use Firebase Auth, not context
+  const userEmail = auth.currentUser?.email;
 
   const checkSubscription = useCallback(async () => {
     try {
       if (!userEmail || !groupId) return;
 
-      // fetch the user doc by email
       const usersRef = collection(db, "users");
       const qUsers = query(usersRef, where("email", "==", userEmail));
       const snap = await getDocs(qUsers);
+
       if (snap.empty) {
         setSubscribed(false);
         return;
       }
+
       const data = snap.docs[0].data();
       const groupIDs = data.groupIDs || [];
 
-      // groupIDs can be strings or DocumentReferences; handle both
       const isSub = groupIDs.some((g) => {
         if (typeof g === "string") return g === groupId;
-        // Firestore DocumentReference has .id
         if (g?.id) return g.id === groupId;
-        // very defensive fallback
         if (g?.path) return g.path.endsWith(`/${groupId}`);
         return false;
       });
@@ -74,7 +74,6 @@ const FinalLevelSelector = ({ title, groupId }) => {
         await subscribeToGroup(userEmail, groupId);
       }
 
-      // re-check from Firestore to stay in sync
       await checkSubscription();
     } catch (error) {
       console.error("Error toggling subscription:", error);
@@ -82,16 +81,25 @@ const FinalLevelSelector = ({ title, groupId }) => {
   };
 
   const popupPress = () => setIsModalVisible(true);
+
   const handleDeletePress = () => {
     setIsModalVisible(false);
     setConfirmDeleteVisible(true);
   };
-  const confirmDelete = () => {
+
+  const confirmDelete = async () => {
     setConfirmDeleteVisible(false);
-    console.log("Final-level item deleted");
+    try {
+      await deleteGroup(groupId);
+      Alert.alert("Success", `Group "${title}" has been deleted.`);
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      Alert.alert("Error", "Failed to delete group.");
+    }
   };
+
   const editGroupPressed = () => {
-    navigation.navigate("EditGroup", { group: { title } });
+    navigation.navigate("EditGroup", { group: { title, id: groupId } });
   };
 
   return (
@@ -99,19 +107,17 @@ const FinalLevelSelector = ({ title, groupId }) => {
       <TouchableOpacity onPress={toggleSubscription} style={styles.container}>
         <Text style={styles.title}>{title}</Text>
 
-        {user.sysAdmin ? (
+        {user.userType === "admin" ? (
           <TouchableOpacity onPress={popupPress}>
             <AntDesign name="more" size={24} color={Colors.primary} />
           </TouchableOpacity>
         ) : null}
 
-        <View>
-          <MaterialIcons
-            name={subscribed ? "notifications-active" : "notifications-off"}
-            size={24}
-            color={Colors.primary}
-          />
-        </View>
+        <MaterialIcons
+          name={subscribed ? "notifications-active" : "notifications-off"}
+          size={24}
+          color={Colors.primary}
+        />
       </TouchableOpacity>
 
       {/* Admin popup */}
@@ -161,7 +167,7 @@ const FinalLevelSelector = ({ title, groupId }) => {
               <View style={styles.confirmBox}>
                 <Text style={styles.confirmTitle}>Confirm Deletion</Text>
                 <Text style={styles.confirmText}>
-                  Are you sure you want to delete this item?
+                  Are you sure you want to delete this group?
                 </Text>
 
                 <View style={styles.confirmButtons}>

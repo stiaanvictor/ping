@@ -20,6 +20,8 @@ import EditGroupScreen from "./screens/EditGroupScreen";
 import ManageGroupScreen from "./screens/ManageGroupScreen";
 import CreateNewNoticeScreen from "./screens/CreateNoticeScreen";
 import NoticesByCategoryScreen from "./screens/NoticesByCategoryScreen";
+import SignupScreen from "./screens/SignupScreen";
+import ManageUsersScreen from "./screens/ManageUsersScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -71,6 +73,7 @@ const AppNavigator = () => {
       {!user.isLoggedIn ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
         </Stack.Navigator>
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -88,6 +91,7 @@ const AppNavigator = () => {
           <Stack.Screen name="EditCategory" component={EditCategoryScreen} />
           <Stack.Screen name="EditGroup" component={EditGroupScreen} />
           <Stack.Screen name="ManageGroup" component={ManageGroupScreen} />
+          <Stack.Screen name="ManageUsers" component={ManageUsersScreen} />
           <Stack.Screen
             name="NoticesByCategory"
             component={NoticesByCategoryScreen}
