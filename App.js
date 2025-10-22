@@ -2,13 +2,14 @@ import { useContext, useState, useEffect } from "react";
 import { AppState } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import messaging from '@react-native-firebase/messaging';
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import * as Font from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
 import LoginScreen from "./screens/LoginScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import ViewNoticeScreen from "./screens/ViewNoticeScreen";
-import CaledarScreen from "./screens/CalendarScreen";
+import CalendarScreen from "./screens/CalendarScreen";
 import GroupSelectionScreen from "./screens/GroupSelectionScreen";
 import EditNoticeScreen from "./screens/EditNoticeScreen";
 import TeacherGroupsScreen from "./screens/TeacherGroupsScreen";
@@ -20,7 +21,12 @@ import ManageGroupScreen from "./screens/ManageGroupScreen";
 import CreateNewNoticeScreen from "./screens/CreateNoticeScreen";
 import NoticesByCategoryScreen from "./screens/NoticesByCategoryScreen";
 
+
 const Stack = createNativeStackNavigator();
+
+messaging().setBackgroundMessageHandler(async remoteMessage => {
+  console.log('Message handled in background:', remoteMessage);
+});
 
 const AppNavigator = () => {
   const { user } = useContext(AuthContext);
@@ -71,7 +77,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
           <Stack.Screen name="ViewNotice" component={ViewNoticeScreen} />
           <Stack.Screen name="EditNotice" component={EditNoticeScreen} />
-          <Stack.Screen name="Calendar" component={CaledarScreen} />
+          <Stack.Screen name="Calendar" component={CalendarScreen} />
           <Stack.Screen
             name="GroupSelection"
             component={GroupSelectionScreen}
