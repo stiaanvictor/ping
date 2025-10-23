@@ -2,7 +2,8 @@ import React, { createContext, useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { firebaseSignup } from "../firebase/firebaseFunctions"; // ✅ add this
+import { firebaseSignup, fcmUpdate } from "../firebase/firebaseFunctions"; // ✅ add this
+
 
 export const AuthContext = createContext();
 
@@ -12,6 +13,7 @@ export const AuthProvider = ({ children }) => {
     userId: null,
     userType: "",
     name: "",
+    
   });
 
   // 🔄 Listen for Firebase login/logout automatically
@@ -40,6 +42,9 @@ export const AuthProvider = ({ children }) => {
             userType,
             name,
           });
+
+          await fcmUpdate(userId);
+
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
@@ -68,6 +73,9 @@ export const AuthProvider = ({ children }) => {
         userType: "student",
         name,
       });
+
+      await fcmUpdate(newUser.uid);
+
     } catch (error) {
       console.error("Signup error:", error);
       throw error;
@@ -99,6 +107,9 @@ export const AuthProvider = ({ children }) => {
         userType,
         name,
       });
+
+      await fcmUpdate(userId);
+
     } catch (error) {
       console.error("Error fetching user data:", error);
       setUser({
@@ -108,6 +119,9 @@ export const AuthProvider = ({ children }) => {
         name,
       });
     }
+
+
+
   };
 
   // ✅ Logout

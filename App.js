@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import { AppState } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import messaging from '@react-native-firebase/messaging';
+
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import * as Font from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
@@ -22,13 +22,14 @@ import CreateNewNoticeScreen from "./screens/CreateNoticeScreen";
 import NoticesByCategoryScreen from "./screens/NoticesByCategoryScreen";
 import SignupScreen from "./screens/SignupScreen";
 import ManageUsersScreen from "./screens/ManageUsersScreen";
+import { setupFCMListeners } from "./firebase/firebaseCloudMessaging";
 
 
 const Stack = createNativeStackNavigator();
 
-messaging().setBackgroundMessageHandler(async remoteMessage => {
-  console.log('Message handled in background:', remoteMessage);
-});
+
+
+
 
 const AppNavigator = () => {
   const { user } = useContext(AuthContext);
@@ -44,6 +45,8 @@ const AppNavigator = () => {
   }
 
   useEffect(() => {
+    setupFCMListeners();
+
     async function loadFonts() {
       await Font.loadAsync({
         "Inter-Regular": require("./assets/fonts/Inter-VariableFont_opsz,wght.ttf"),

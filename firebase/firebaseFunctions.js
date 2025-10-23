@@ -1,4 +1,5 @@
 import { auth } from "./firebaseConfig";
+import { setupFCM } from "../firebase/firebaseCloudMessaging";
 import {
   getAuth,
   sendPasswordResetEmail,
@@ -48,6 +49,7 @@ export const firebaseSignup = async (email, password) => {
     email: email,
     userType: "student",
     groupIDs: [],
+    fcmToken: ""
   });
 
   // 3️⃣ Wait until the user doc is actually written
@@ -66,6 +68,18 @@ export const firebaseSignup = async (email, password) => {
 export const firebaseResetPassword = async (email) => {
   const auth = getAuth();
   await sendPasswordResetEmail(auth, email);
+};
+
+export const fcmUpdate = async (userID) => {
+  const docRef = doc(db, "users", userID);
+  const docSnap = await getDoc(docRef);
+  const fcmToken = await setupFCM();
+
+  const userData = docSnap.data();
+
+  if (userData.fcmToken !== fcmToken) {
+    await updateDoc(docRef, { 'fcmToken': fcmToken });
+  }
 };
 
 // 📰 Get notices belonging to the user's subscribed groups (server-side filtering)

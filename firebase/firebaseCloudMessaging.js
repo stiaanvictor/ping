@@ -1,16 +1,12 @@
 import messaging from '@react-native-firebase/messaging';
 import { Alert } from 'react-native';
 
-async function setupFCM() {
-    // Request permission to receive notifications (important for IOS)
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
+async function setupFCMListeners() {
 
-    const fcmToken = await messaging().getToken();
-    console.log('FCM Token:', fcmToken);
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+        console.log('Message handled in background:', remoteMessage);
+    });
 
     messaging().onMessage(async remoteMessage => {
         console.log('foreground message received:', remoteMessage);
@@ -31,6 +27,25 @@ async function setupFCM() {
         //Todo: React to the notification by navigating to the relevant screen
     }
 
+    console.log('Notice Listeners set up');
+
 }
 
-export default setupFCM;
+async function setupFCM() {
+    // Request permission to receive notifications (important for IOS)
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+
+    const fcmToken = await messaging().getToken();
+    console.log('FCM Token:', fcmToken);
+    return fcmToken;
+
+}
+
+
+
+
+export { setupFCM, setupFCMListeners };
