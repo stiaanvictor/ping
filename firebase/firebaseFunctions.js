@@ -1,4 +1,5 @@
 import { auth } from "./firebaseConfig";
+import { setupFCM } from "../firebase/firebaseCloudMessaging";
 import {
   getAuth,
   sendPasswordResetEmail,
@@ -48,6 +49,7 @@ export const firebaseSignup = async (email, password) => {
     email: email,
     userType: "student",
     groupIDs: [],
+    fcmToken: ""
   });
 
   //Wait until the user doc is actually written
@@ -66,6 +68,18 @@ export const firebaseSignup = async (email, password) => {
 export const firebaseResetPassword = async (email) => {
   const auth = getAuth();
   await sendPasswordResetEmail(auth, email);
+};
+
+export const fcmUpdate = async (userID) => {
+  const docRef = doc(db, "users", userID);
+  const docSnap = await getDoc(docRef);
+  const fcmToken = await setupFCM();
+
+  const userData = docSnap.data();
+
+  if (userData.fcmToken !== fcmToken) {
+    await updateDoc(docRef, { 'fcmToken': fcmToken });
+  }
 };
 
 //Get notices belonging to the user's subscribed groups (server-side filtering)
@@ -590,13 +604,15 @@ export async function deleteGroupsBySubCategory(subCategoryId) {
     const q = query(groupsRef, where("subCategoryID", "==", subCategoryId));
     const querySnapshot = await getDocs(q);
 
-    const deletePromises = querySnapshot.docs.map((docSnap) =>
-      deleteDoc(doc(db, "groups", docSnap.id))
+    // Delete each group fully (including notices + user cleanup)
+    const deletePromises = querySnapshot.docs.map((groupDoc) =>
+      deleteGroup(groupDoc.id)
     );
 
     await Promise.all(deletePromises);
+
     console.log(
-      `Deleted ${querySnapshot.size} group(s) under subCategory ${subCategoryId}`
+      'Deleted ${querySnapshot.size} group(s) and related data under subCategory ${subCategoryId}'
     );
   } catch (error) {
     console.error("Error deleting groups:", error);
@@ -733,7 +749,18 @@ export async function deleteGroup(groupId) {
   try {
     if (!groupId) throw new Error("Group ID is required");
 
-    // Remove this groupId from all users’ arrays
+    // 1️⃣ Delete all notices belonging to this group
+    const noticesRef = collection(db, "notices");
+    const noticesQuery = query(noticesRef, where("groupID", "==", groupId));
+    const noticesSnap = await getDocs(noticesQuery);
+
+    const noticeDeletes = noticesSnap.docs.map((noticeDoc) =>
+      deleteDoc(doc(db, "notices", noticeDoc.id))
+    );
+
+    await Promise.all(noticeDeletes);
+
+    // 2️⃣ Remove this groupId from all users’ arrays
     const usersRef = collection(db, "users");
     const usersSnap = await getDocs(usersRef);
 
@@ -747,11 +774,11 @@ export async function deleteGroup(groupId) {
 
     await Promise.all(userUpdates);
 
-    // Delete the group document itself
+    // 3️⃣ Delete the group document itself
     const groupRef = doc(db, "groups", groupId);
     await deleteDoc(groupRef);
 
-    console.log(`Group ${groupId} deleted successfully.`);
+    console.log('Group ${groupId} and related notices deleted successfully.');
   } catch (error) {
     console.error("Error deleting group:", error);
     throw error;
