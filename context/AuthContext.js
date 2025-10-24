@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { firebaseSignup, fcmUpdate } from "../firebase/firebaseFunctions"; // ✅ add this
+import { firebaseSignup, fcmUpdate } from "../firebase/firebaseFunctions";
 
 
 export const AuthContext = createContext();
@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
     
   });
 
-  // 🔄 Listen for Firebase login/logout automatically
+  //Listen for Firebase login/logout automatically
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  // ✅ Signup new user
+  //Signup new user
   const signup = async (email, password) => {
     try {
       const newUser = await firebaseSignup(email, password);
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
 
   };
 
-  // ✅ Logout
+  //Logout
   const logout = async () => {
     await signOut(auth);
     setUser({
