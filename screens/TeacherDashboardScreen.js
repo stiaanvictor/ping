@@ -73,7 +73,7 @@ function TeacherDashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ✅ App Bar */}
+      {/*App Bar */}
       <View style={styles.appBar}>
         <Text></Text>
         <Text style={styles.appBarText}>Dashboard</Text>
@@ -114,7 +114,7 @@ function TeacherDashboardScreen() {
         </Modal>
       </View>
 
-      {/* ✅ Main Layout */}
+      {/*Main Layout */}
       <FlatList
         ListHeaderComponent={
           <>
@@ -142,7 +142,7 @@ function TeacherDashboardScreen() {
               />
             </View>
 
-            {/* ✅ Notices Section (same as ManageGroupScreen) */}
+            {/*Notices Section (same as ManageGroupScreen) */}
             <Text style={styles.sectionTitle}>Your Sent Notices:</Text>
             <View style={styles.noticeListBox}>
               {loading ? (
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
 
-  // ✅ Matches ManageGroupScreen styles
+  //Matches ManageGroupScreen styles
   sectionTitle: {
     fontSize: 20,
     fontFamily: "Inter-Regular",

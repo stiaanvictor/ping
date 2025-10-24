@@ -49,7 +49,7 @@ const ManageGroupScreen = ({ route }) => {
 
     return (
       <TouchableOpacity
-        key={item.id || item.title} // ✅ unique key added here
+        key={item.id || item.title}
         style={styles.noticeCard}
         onPress={() => handleNoticePress(item)}
       >

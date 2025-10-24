@@ -13,11 +13,7 @@ import {
   firebaseResetPassword,
 } from "../firebase/firebaseFunctions";
 import Colors from "../constants/colors";
-import { Ionicons } from "@expo/vector-icons"; // ✅ Make sure you have this
-
-// const user = await firebaseLogin("alex47rivera@gmail.com", "Coffee123"); teacher
-// // const user = await firebaseLogin("frikkieviljoen@gmail.com", "Coffee123"); student
-// // const user = await firebaseLogin("sebastian@gmail.com", "Coffee123"); admin
+import { Ionicons } from "@expo/vector-icons"; 
 
 const LoginScreen = ({ navigation }) => {
   const { login } = useContext(AuthContext);
@@ -36,9 +32,6 @@ const LoginScreen = ({ navigation }) => {
 
     try {
       const user = await firebaseLogin(email, password);
-      // const user = await firebaseLogin("alex47rivera@gmail.com", "Coffee123");
-      // const user = await firebaseLogin("frikkieviljoen@gmail.com", "Coffee123");
-      // const user = await firebaseLogin("sebastian@gmail.com", "Coffee123");
       login(user.email);
     } catch (err) {
       console.error(err);
@@ -121,7 +114,7 @@ const LoginScreen = ({ navigation }) => {
         <Text style={styles.forgotText}>Forgot your password?</Text>
       </TouchableOpacity>
 
-      {/* ✅ Added Sign Up Option */}
+      {/*Added Sign Up Option */}
       <TouchableOpacity onPress={handleNavigateToSignup}>
         <Text style={styles.signupText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>

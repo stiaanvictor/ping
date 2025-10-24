@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     fontFamily: "Inter-Regular",
-    marginBottom: 8, // spacing above dropdown
+    marginBottom: 8,
   },
 
   pickerContainer: {
