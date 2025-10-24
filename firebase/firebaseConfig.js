@@ -21,7 +21,7 @@ const firebaseConfig = {
 // Initialize app once
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// ✅ Auth initialization that works with Expo / React Native hot reloads
+//Auth initialization that works with Expo / React Native hot reloads
 let auth;
 try {
   // If Auth already initialized, this returns it

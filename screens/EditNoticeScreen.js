@@ -175,7 +175,7 @@ function EditNoticeScreen({ route }) {
           </Text>
         </TouchableOpacity>
 
-        {/* 🗑️ Delete Notice Button */}
+        {/*Delete Notice Button */}
         <TouchableOpacity
           style={[styles.deleteButton, isSubmitting && { opacity: 0.6 }]}
           onPress={handleDelete}

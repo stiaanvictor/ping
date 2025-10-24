@@ -86,7 +86,7 @@ function StudentNavigationBar() {
         </Text>
       </TouchableOpacity>
 
-      {/* ✅ Admin-only: Managed Users */}
+      {/*Admin-only: Managed Users */}
       {user?.userType === "admin" && (
         <TouchableOpacity style={styles.option} onPress={navigateManageUsers}>
           <Ionicons

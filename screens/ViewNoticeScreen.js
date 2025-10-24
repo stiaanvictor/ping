@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#EFEFEF" },
   appBar: {
     flexDirection: "row",
-    justifyContent: "space-between", // pushes items to the edges
+    justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: Colors.primary,
     paddingVertical: 5,

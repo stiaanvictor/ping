@@ -41,7 +41,7 @@ function CreateNewNoticeScreen({ route }) {
   };
 
   const handleCreate = async () => {
-    // ✅ Validate inputs
+    //Validate inputs
     if (!titleText.trim() || !subHeadingText.trim() || !noticeText.trim()) {
       Alert.alert(
         "Missing Information",

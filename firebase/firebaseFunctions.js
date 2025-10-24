@@ -21,7 +21,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 
-// 🔐 Login
+//Login
 export const firebaseLogin = async (email, password) => {
   const userCredential = await signInWithEmailAndPassword(
     auth,
@@ -34,7 +34,7 @@ export const firebaseLogin = async (email, password) => {
 export const firebaseSignup = async (email, password) => {
   const auth = getAuth();
 
-  // 1️⃣ Create Firebase Auth user
+  //Create Firebase Auth user
   const userCredential = await createUserWithEmailAndPassword(
     auth,
     email,
@@ -42,7 +42,7 @@ export const firebaseSignup = async (email, password) => {
   );
   const user = userCredential.user;
 
-  // 2️⃣ Create Firestore user doc
+  //Create Firestore user doc
   const userRef = doc(db, "users", user.uid);
   await setDoc(userRef, {
     email: email,
@@ -50,7 +50,7 @@ export const firebaseSignup = async (email, password) => {
     groupIDs: [],
   });
 
-  // 3️⃣ Wait until the user doc is actually written
+  //Wait until the user doc is actually written
   let attempts = 0;
   while (attempts < 5) {
     // ~5 attempts max
@@ -68,15 +68,15 @@ export const firebaseResetPassword = async (email) => {
   await sendPasswordResetEmail(auth, email);
 };
 
-// 📰 Get notices belonging to the user's subscribed groups (server-side filtering)
+//Get notices belonging to the user's subscribed groups (server-side filtering)
 export const getUserNotices = async (userEmail) => {
   try {
-    // 1️⃣ Find user by email
+    //Find user by email
     const usersRef = collection(db, "users");
     const qUser = query(usersRef, where("email", "==", userEmail));
     const userSnap = await getDocs(qUser);
 
-    // ✅ If no user doc yet (likely just signed up), stop early
+    //If no user doc yet (likely just signed up), stop early
     if (userSnap.empty) {
       console.log("User doc not found yet. Probably just signed up.");
       return [];
@@ -85,13 +85,13 @@ export const getUserNotices = async (userEmail) => {
     const userDoc = userSnap.docs[0];
     const data = userDoc.data();
 
-    // ✅ Stop if groupIDs missing or empty
+    //Stop if groupIDs missing or empty
     if (!data || !Array.isArray(data.groupIDs) || data.groupIDs.length === 0) {
       console.log("User has no valid groupIDs yet — skipping notices fetch.");
       return [];
     }
 
-    // 2️⃣ Normalize IDs
+    //Normalize IDs
     const normalizedIds = data.groupIDs
       .map((g) => {
         if (typeof g === "string") return g;
@@ -103,7 +103,7 @@ export const getUserNotices = async (userEmail) => {
 
     if (normalizedIds.length === 0) return [];
 
-    // 3️⃣ Chunk for Firestore 'in' query
+    //Chunk for Firestore 'in' query
     const chunks = [];
     for (let i = 0; i < normalizedIds.length; i += 10) {
       chunks.push(normalizedIds.slice(i, i + 10));
@@ -111,7 +111,7 @@ export const getUserNotices = async (userEmail) => {
 
     const all = [];
 
-    // ✅ Wrap in try/catch to silence harmless “invalid data” race errors
+    //Wrap in try/catch to silence harmless “invalid data” race errors
     try {
       for (const chunk of chunks) {
         if (!chunk || chunk.length === 0) continue;
@@ -129,7 +129,7 @@ export const getUserNotices = async (userEmail) => {
       }
     }
 
-    // 4️⃣ Sort newest first
+    //Sort newest first
     all.sort((a, b) => {
       const toSec = (v) =>
         v?.seconds ??
@@ -147,7 +147,7 @@ export const getUserNotices = async (userEmail) => {
   }
 };
 
-// 🗂 Get all notices by category
+//Get all notices by category
 export const getNoticesByCategory = async (categoryName) => {
   try {
     const noticesRef = collection(db, "notices");
@@ -164,9 +164,7 @@ export const getNoticesByCategory = async (categoryName) => {
   }
 };
 
-// ✅ CORRECTED BELOW — these now match your Firestore structure
-
-// 📚 Get subcategories under a given category (e.g. "Rugby", "Cricket" under "Sports")
+//Get subcategories under a given category (e.g. "Rugby", "Cricket" under "Sports")
 export const getSubCategories = async (categoryName) => {
   try {
     const subCatRef = collection(db, "subCategories");
@@ -185,7 +183,7 @@ export const getSubCategories = async (categoryName) => {
   }
 };
 
-// 🏈 Get groups under a given subcategory (e.g. "U14 A", "U15 B")
+//Get groups under a given subcategory (e.g. "U14 A", "U15 B")
 export const getGroupsBySubCategory = async (subCategoryId) => {
   try {
     if (!subCategoryId) {
@@ -207,7 +205,7 @@ export const getGroupsBySubCategory = async (subCategoryId) => {
       name: doc.data().name || doc.id,
     }));
 
-    // Sort alphabetically and numerically (natural sort)
+    //Sort alphabetically and numerically (natural sort)
     groups.sort((a, b) =>
       a.name.localeCompare(b.name, undefined, {
         numeric: true,
@@ -222,7 +220,7 @@ export const getGroupsBySubCategory = async (subCategoryId) => {
   }
 };
 
-// ➕ Subscribe user to a group (stores only groupId string)
+//Subscribe user to a group (stores only groupId string)
 export const subscribeToGroup = async (userEmail, groupId) => {
   try {
     const usersRef = collection(db, "users");
@@ -241,7 +239,7 @@ export const subscribeToGroup = async (userEmail, groupId) => {
       groupIDs: arrayUnion(groupId),
     });
 
-    console.log(`✅ Subscribed to group: ${groupId}`);
+    console.log(`Subscribed to group: ${groupId}`);
   } catch (error) {
     console.error("Error subscribing to group:", error);
   }
@@ -266,16 +264,16 @@ export const unsubscribeFromGroup = async (userEmail, groupId) => {
       groupIDs: arrayRemove(groupId),
     });
 
-    console.log(`🚫 Unsubscribed from group: ${groupId}`);
+    console.log(`Unsubscribed from group: ${groupId}`);
   } catch (error) {
     console.error("Error unsubscribing from group:", error);
   }
 };
 
-// 🧑‍🏫 Get all groups a user manages
+//Get all groups a user manages
 export const getManagedGroups = async (userEmail) => {
   try {
-    // 1️⃣ Find the user by email
+    // Find the user by email
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("email", "==", userEmail));
     const userSnap = await getDocs(q);
@@ -293,7 +291,7 @@ export const getManagedGroups = async (userEmail) => {
       return [];
     }
 
-    // 2️⃣ Fetch the group documents by ID
+    //Fetch the group documents by ID
     const groupsRef = collection(db, "groups");
     const managedGroups = [];
 
@@ -313,7 +311,7 @@ export const getManagedGroups = async (userEmail) => {
   }
 };
 
-// 🔍 Get a single subcategory by its ID
+//Get a single subcategory by its ID
 export const getSubCategoryById = async (subCategoryId) => {
   try {
     if (!subCategoryId) {
@@ -336,7 +334,7 @@ export const getSubCategoryById = async (subCategoryId) => {
   }
 };
 
-// 📢 Get all notices for a specific group
+//Get all notices for a specific group
 export const getNoticesByGroupId = async (groupId) => {
   try {
     if (!groupId) {
@@ -363,7 +361,7 @@ export const getNoticesByGroupId = async (groupId) => {
   }
 };
 
-// 📝 Create a new notice in the "notices" collection
+//Create a new notice in the "notices" collection
 export const createNotice = async ({
   title,
   subTitle,
@@ -385,23 +383,23 @@ export const createNotice = async ({
     };
 
     const docRef = await addDoc(collection(db, "notices"), newNotice);
-    console.log("✅ Notice created with ID:", docRef.id);
+    console.log("Notice created with ID:", docRef.id);
 
     return { id: docRef.id, ...newNotice };
   } catch (error) {
-    console.error("❌ Error creating notice:", error);
+    console.error("Error creating notice:", error);
     throw error;
   }
 };
 
-// 🔁 Fully replace a notice (delete and recreate)
+//Fully replace a notice (delete and recreate)
 export const updateNotice = async (noticeId, updatedNotice) => {
   try {
-    // 1️⃣ Delete the old notice
+    //Delete the old notice
     await deleteDoc(doc(db, "notices", noticeId));
-    console.log(`🗑️ Deleted old notice with ID: ${noticeId}`);
+    console.log(`Deleted old notice with ID: ${noticeId}`);
 
-    // 2️⃣ Create the new notice
+    //Create the new notice
     const newNotice = {
       title: updatedNotice.title,
       subTitle: updatedNotice.subTitle,
@@ -413,11 +411,11 @@ export const updateNotice = async (noticeId, updatedNotice) => {
     };
 
     const newDocRef = await addDoc(collection(db, "notices"), newNotice);
-    console.log(`✅ Notice recreated with new ID: ${newDocRef.id}`);
+    console.log(`Notice recreated with new ID: ${newDocRef.id}`);
 
     return { id: newDocRef.id, ...newNotice };
   } catch (error) {
-    console.error("❌ Error updating notice:", error);
+    console.error("Error updating notice:", error);
     throw error;
   }
 };
@@ -776,7 +774,7 @@ export async function deleteNotice(noticeId) {
   }
 }
 
-// 🔹 Get all users from Firestore
+//Get all users from Firestore
 export const getAllUsers = async () => {
   try {
     const usersRef = collection(db, "users");
@@ -815,7 +813,7 @@ export const updateUserType = async (userId, newType) => {
     }
 
     await updateDoc(userRef, updateData);
-    console.log(`✅ Updated user ${userId} to ${newType}`);
+    console.log(`Updated user ${userId} to ${newType}`);
   } catch (error) {
     console.error("Error updating user type:", error);
     throw error;
