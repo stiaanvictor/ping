@@ -13,7 +13,7 @@ function StudentNoticesSection({ date }) {
     const fetchUserNotices = async () => {
       try {
         if (!user?.userId) return;
-        const data = await getUserNotices(user.email);
+        const data = await getUserNotices();
 
         setNotices(data);
       } catch (error) {

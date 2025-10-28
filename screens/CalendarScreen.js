@@ -25,8 +25,7 @@ function CalendarScreen() {
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        if (!user?.email) return;
-        const data = await getUserNotices(user.email);
+        const data = await getUserNotices();
         setNotices(data);
 
         // auto-select first event date if available
@@ -92,6 +91,7 @@ function CalendarScreen() {
       </View>
 
       <Calendar
+        markedDates={markedDates} // ← add this line
         dayComponent={({ date, state }) => {
           const isMarked = markedDates[date.dateString];
           const isToday =

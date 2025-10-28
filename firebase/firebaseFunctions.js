@@ -1,5 +1,4 @@
 import { auth } from "./firebaseConfig";
-import { setupFCM } from "../firebase/firebaseCloudMessaging";
 import {
   getAuth,
   sendPasswordResetEmail,
@@ -49,7 +48,6 @@ export const firebaseSignup = async (email, password) => {
     email: email,
     userType: "student",
     groupIDs: [],
-    fcmToken: ""
   });
 
   //Wait until the user doc is actually written
@@ -70,27 +68,25 @@ export const firebaseResetPassword = async (email) => {
   await sendPasswordResetEmail(auth, email);
 };
 
-export const fcmUpdate = async (userID) => {
-  const docRef = doc(db, "users", userID);
-  const docSnap = await getDoc(docRef);
-  const fcmToken = await setupFCM();
-
-  const userData = docSnap.data();
-
-  if (userData.fcmToken !== fcmToken) {
-    await updateDoc(docRef, { 'fcmToken': fcmToken });
-  }
-};
-
 //Get notices belonging to the user's subscribed groups (server-side filtering)
-export const getUserNotices = async (userEmail) => {
+export const getUserNotices = async () => {
   try {
-    //Find user by email
+    // 1) Get current user email from Auth
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser?.email) {
+      console.log("No signed-in user (or user email missing).");
+      return [];
+    }
+
+    const userEmail = currentUser.email;
+
+    // 2) Find user doc by email
     const usersRef = collection(db, "users");
     const qUser = query(usersRef, where("email", "==", userEmail));
     const userSnap = await getDocs(qUser);
 
-    //If no user doc yet (likely just signed up), stop early
     if (userSnap.empty) {
       console.log("User doc not found yet. Probably just signed up.");
       return [];
@@ -99,13 +95,13 @@ export const getUserNotices = async (userEmail) => {
     const userDoc = userSnap.docs[0];
     const data = userDoc.data();
 
-    //Stop if groupIDs missing or empty
+    // 3) Stop if groupIDs missing or empty
     if (!data || !Array.isArray(data.groupIDs) || data.groupIDs.length === 0) {
       console.log("User has no valid groupIDs yet — skipping notices fetch.");
       return [];
     }
 
-    //Normalize IDs
+    // 4) Normalize group IDs
     const normalizedIds = data.groupIDs
       .map((g) => {
         if (typeof g === "string") return g;
@@ -117,7 +113,7 @@ export const getUserNotices = async (userEmail) => {
 
     if (normalizedIds.length === 0) return [];
 
-    //Chunk for Firestore 'in' query
+    // 5) Chunk for Firestore 'in' query (max 10)
     const chunks = [];
     for (let i = 0; i < normalizedIds.length; i += 10) {
       chunks.push(normalizedIds.slice(i, i + 10));
@@ -125,7 +121,7 @@ export const getUserNotices = async (userEmail) => {
 
     const all = [];
 
-    //Wrap in try/catch to silence harmless “invalid data” race errors
+    // 6) Fetch notices for each chunk
     try {
       for (const chunk of chunks) {
         if (!chunk || chunk.length === 0) continue;
@@ -135,15 +131,14 @@ export const getUserNotices = async (userEmail) => {
         snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
       }
     } catch (err) {
-      if (err.message.includes("Function where() called with invalid data")) {
+      if (err?.message?.includes("Function where() called with invalid data")) {
         console.log("Skipped invalid query — user doc not ready yet.");
         return [];
-      } else {
-        throw err;
       }
+      throw err;
     }
 
-    //Sort newest first
+    // 7) Sort newest first (noticeSentDate, then eventDate)
     all.sort((a, b) => {
       const toSec = (v) =>
         v?.seconds ??
@@ -612,7 +607,7 @@ export async function deleteGroupsBySubCategory(subCategoryId) {
     await Promise.all(deletePromises);
 
     console.log(
-      'Deleted ${querySnapshot.size} group(s) and related data under subCategory ${subCategoryId}'
+      "Deleted ${querySnapshot.size} group(s) and related data under subCategory ${subCategoryId}"
     );
   } catch (error) {
     console.error("Error deleting groups:", error);
@@ -778,7 +773,7 @@ export async function deleteGroup(groupId) {
     const groupRef = doc(db, "groups", groupId);
     await deleteDoc(groupRef);
 
-    console.log('Group ${groupId} and related notices deleted successfully.');
+    console.log("Group ${groupId} and related notices deleted successfully.");
   } catch (error) {
     console.error("Error deleting group:", error);
     throw error;

@@ -2,8 +2,7 @@ import React, { createContext, useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { firebaseSignup, fcmUpdate } from "../firebase/firebaseFunctions";
-
+import { firebaseSignup } from "../firebase/firebaseFunctions";
 
 export const AuthContext = createContext();
 
@@ -13,10 +12,9 @@ export const AuthProvider = ({ children }) => {
     userId: null,
     userType: "",
     name: "",
-    
   });
 
-  //Listen for Firebase login/logout automatically
+  // Listen for Firebase login/logout automatically
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -38,13 +36,10 @@ export const AuthProvider = ({ children }) => {
 
           setUser({
             isLoggedIn: true,
-            userId: userId,
+            userId: firebaseUser.uid,
             userType,
             name,
           });
-
-          await fcmUpdate(userId);
-
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
@@ -61,7 +56,7 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  //Signup new user
+  // Signup new user
   const signup = async (email, password) => {
     try {
       const newUser = await firebaseSignup(email, password);
@@ -73,9 +68,6 @@ export const AuthProvider = ({ children }) => {
         userType: "student",
         name,
       });
-
-      await fcmUpdate(newUser.uid);
-
     } catch (error) {
       console.error("Signup error:", error);
       throw error;
@@ -87,44 +79,51 @@ export const AuthProvider = ({ children }) => {
     const name = email.split("@")[0];
 
     try {
+      // Find the user in Firestore using the email
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email));
       const querySnapshot = await getDocs(q);
 
       let userType = "teacher"; // fallback if not found
-      let userId;
+      let uid;
+
       if (!querySnapshot.empty) {
         const userSnap = querySnapshot.docs[0];
         const userDoc = userSnap.data();
         userType = userDoc.userType || "student";
-        userId = userSnap.id;
+
+        // Get the Auth UID instead of Firestore doc ID
+        // Fetch user from Firebase Auth by email
+        const userRecord = auth.currentUser;
+
+        if (userRecord && userRecord.email === email) {
+          uid = userRecord.uid;
+        } else {
+          // If not logged in, try to find the user through Admin SDK
+          console.warn("No currentUser found in client auth — UID not set.");
+        }
       }
 
       setUser({
         isLoggedIn: true,
-        userId: userId,
+        userId: uid || null,
         email,
         userType,
         name,
       });
-
-      await fcmUpdate(userId);
-
     } catch (error) {
       console.error("Error fetching user data:", error);
       setUser({
         isLoggedIn: true,
+        userId: null,
         email,
         userType: "student",
         name,
       });
     }
-
-
-
   };
 
-  //Logout
+  // Logout
   const logout = async () => {
     await signOut(auth);
     setUser({
