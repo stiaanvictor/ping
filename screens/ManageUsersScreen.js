@@ -3,16 +3,17 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   Platform,
 } from "react-native";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
+
 import { getAllUsers, updateUserType } from "../firebase/firebaseFunctions";
 import Colors from "../constants/colors";
-import StudentNavigationBar from "../components/StudentNavigationBar";
+import NavigationBar from "../components/NavigationBar";
 
 function ManageUsersScreen() {
   const [users, setUsers] = useState([]);
@@ -56,8 +57,8 @@ function ManageUsersScreen() {
     }
   };
 
-  const renderUser = ({ item }) => (
-    <View style={styles.userCard}>
+  const renderUser = (item) => (
+    <View key={item.id} style={styles.userCard}>
       <Text style={styles.email}>{item.email}</Text>
 
       <View style={styles.pickerContainer}>
@@ -84,8 +85,9 @@ function ManageUsersScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Manage Users</Text>
+
       <TextInput
         style={styles.search}
         placeholder="Search users by email..."
@@ -93,18 +95,19 @@ function ManageUsersScreen() {
         onChangeText={handleSearch}
       />
 
-      {filteredUsers.length > 0 ? (
-        <FlatList
-          data={filteredUsers}
-          renderItem={renderUser}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
-      ) : (
-        <Text style={styles.noUsers}>No users found.</Text>
-      )}
-      <StudentNavigationBar />
-    </View>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map(renderUser)
+        ) : (
+          <Text style={styles.noUsers}>No users found.</Text>
+        )}
+      </ScrollView>
+
+      <NavigationBar />
+    </SafeAreaView>
   );
 }
 
@@ -114,7 +117,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 40,
     paddingHorizontal: 15,
   },
   title: {
@@ -141,14 +143,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-
   email: {
     fontSize: 16,
     color: "#333",
     fontFamily: "Inter-Regular",
     marginBottom: 8,
   },
-
   pickerContainer: {
     borderWidth: 1,
     borderColor: Colors.primary,
@@ -158,7 +158,6 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: "center",
   },
-
   picker: {
     width: "100%",
     color: "#000",

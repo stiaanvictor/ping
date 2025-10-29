@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
           const q = query(usersRef, where("email", "==", firebaseUser.email));
           const querySnapshot = await getDocs(q);
 
-          let userType = "teacher";
+          let userType = "student";
           let userId;
           if (!querySnapshot.empty) {
             const userSnap = querySnapshot.docs[0];
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
       const q = query(usersRef, where("email", "==", email));
       const querySnapshot = await getDocs(q);
 
-      let userType = "teacher"; // fallback if not found
+      let userType = "student"; // fallback if not found
       let uid;
 
       if (!querySnapshot.empty) {

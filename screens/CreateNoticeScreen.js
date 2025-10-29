@@ -17,7 +17,7 @@ import { createNotice } from "../firebase/firebaseFunctions";
 import { useNavigation } from "@react-navigation/native";
 
 function CreateNewNoticeScreen({ route }) {
-  const { groupTitle, groupId } = route.params;
+  const { groupTitle, groupId, category } = route.params;
   const navigation = useNavigation();
 
   console.log(groupId);
@@ -56,7 +56,7 @@ function CreateNewNoticeScreen({ route }) {
       await createNotice({
         title: titleText.trim(),
         subTitle: subHeadingText.trim(),
-        category: "Academics", // Default category, or you can make it dynamic later
+        category: category,
         eventDate: selectedDate,
         groupID: groupId,
         notice: noticeText.trim(),

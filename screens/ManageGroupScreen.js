@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getNoticesByGroupId } from "../firebase/firebaseFunctions";
 
 const ManageGroupScreen = ({ route }) => {
-  const { title, id } = route.params;
+  const { title, id, category } = route.params;
   const navigation = useNavigation();
 
   const [notices, setNotices] = useState([]);
@@ -39,7 +39,11 @@ const ManageGroupScreen = ({ route }) => {
   };
 
   const handleCreateNew = () => {
-    navigation.navigate("CreateNewNotice", { groupTitle: title, groupId: id });
+    navigation.navigate("CreateNewNotice", {
+      groupTitle: title,
+      groupId: id,
+      category: category,
+    });
   };
 
   const renderNotice = (item) => {

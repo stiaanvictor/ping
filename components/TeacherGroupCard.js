@@ -19,7 +19,11 @@ const TeacherGroupCard = ({ title, id, subCategoryID }) => {
   }, []);
 
   const handlePress = () => {
-    navigation.navigate("ManageGroup", { title, id });
+    navigation.navigate("ManageGroup", {
+      title,
+      id,
+      category: subCategory.category,
+    });
   };
 
   return (

@@ -67,7 +67,7 @@ function NoticesByCategoryScreen({ route }) {
               subHeading={item.subTitle}
               eventDate={formatDate(item.eventDate)}
               noticeDate={formatDate(item.noticeSentDate)}
-              notice={`Group: ${item.groupID?.id || "Unknown"}`}
+              notice={item.notice}
             />
           ))
         ) : (
