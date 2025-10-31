@@ -9,13 +9,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your config
 const firebaseConfig = {
-  apiKey: "AIzaSyCgMei2Ex5N_2Pv8MaDAxsQVOJkOSzVpRY",
-  authDomain: "ping-s6.firebaseapp.com",
-  projectId: "ping-s6",
-  storageBucket: "ping-s6.firebasestorage.app",
-  messagingSenderId: "221732707599",
-  appId: "1:221732707599:web:290e07dd8987c8c390b27a",
-  measurementId: "G-SKHF0ENGKN",
+  apiKey: "ENTER_YOUR_API_KEY_HERE",
+  authDomain: "ENTER_YOUR_AUTH_DOMAIN_HERE",
+  projectId: "ENTER_YOUR_PROJECT_ID_HERE",
+  storageBucket: "ENTER_YOUR_STORAGE_BUCKET_HERE",
+  messagingSenderId: "ENTER_YOUR_MESSAGING_SENDER_ID_HERE",
+  appId: "ENTER_YOUR_APP_ID_HERE",
+  measurementId: "ENTER_YOUR_MEASUREMENT_ID_HERE",
 };
 
 // Initialize app once
@@ -24,18 +24,10 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 //Auth initialization that works with Expo / React Native hot reloads
 let auth;
 try {
-  // If Auth already initialized, this returns it
-  // auth = getAuth(app);
-
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(ReactNativeAsyncStorage),
   });
-} catch (e) {
-  // Otherwise, initialize it with persistence
-  // auth = initializeAuth(app, {
-  //   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  // });
-}
+} catch (e) {}
 
 export { auth };
 export const db = getFirestore(app);
